@@ -1,7 +1,8 @@
-import {IResolvers} from '@graphql-tools/utils';
 import {GraphQLTimestamp} from 'graphql-scalars';
 import {makeExecutableSchema} from '@graphql-tools/schema';
 import {typeDefs} from './typeDefs';
+import {Resolvers} from './generated/graphql';
+
 import {
   getUser,
   getAllGroups,
@@ -10,7 +11,7 @@ import {
   getMembersOfGroup,
 } from './db/connectors';
 
-const resolvers : IResolvers = {
+const resolvers : Resolvers = {
   Query: {
     groups: getAllGroups,
     user: (_, {id}) => getUser(id),

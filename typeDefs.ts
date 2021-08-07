@@ -1,4 +1,8 @@
-export const typeDefs = `
+// noinspection GraphQLUnresolvedReference
+
+import gql from 'graphql-tag';
+
+export const typeDefs = gql`
   scalar Timestamp
   type User  {
       id: ID!
@@ -7,7 +11,7 @@ export const typeDefs = `
       the list of groups to which this user belongs
       """
       groups: [Group!]!
-      created: Timestamp
+      created: Timestamp!
   }
   type Group {
       id: ID!

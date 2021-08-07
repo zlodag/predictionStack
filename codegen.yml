@@ -1,0 +1,12 @@
+overwrite: true
+schema: "typeDefs.ts"
+generates:
+  generated/graphql.ts:
+    plugins:
+      - "typescript"
+      - "typescript-resolvers"
+    config:
+      strictScalars: true
+      scalars:
+        ID: number
+        Timestamp: GraphQLScalarType
