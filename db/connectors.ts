@@ -41,6 +41,17 @@ export const getGroupsForUser = (userId: string) => pool
   ])
   .then(result => result.rows);
 
+export const getCasesForUser = (userId: string) => pool
+  .query('SELECT "id", "reference", "creator" AS "creatorId", "group" AS "groupId", "deadline" FROM "case" WHERE "creator"=$1 ORDER BY "deadline"', [
+    userId,
+  ])
+  .then(result => result.rows);
+
+export const getCasesForGroup = (groupId: string) => pool
+  .query('SELECT "id", "reference", "creator" AS "creatorId", "group" AS "groupId", "deadline" FROM "case" WHERE "group"=$1 ORDER BY "deadline"', [
+    groupId,
+  ])
+  .then(result => result.rows);
 
 // Mutation
 

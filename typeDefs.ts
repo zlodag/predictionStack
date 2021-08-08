@@ -7,16 +7,15 @@ export const typeDefs = gql`
   type User  {
       id: ID!
       name: String!
-      """
-      the list of groups to which this user belongs
-      """
       groups: [Group!]!
+      cases: [Case!]!
       created: Timestamp!
   }
   type Group {
       id: ID!
       name: String!
       members: [User!]!
+      cases: [Case!]!
   }
   type Membership {
     user: ID!

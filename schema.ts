@@ -21,10 +21,12 @@ const resolvers : Resolvers = {
 
   User: {
     groups: user => connectors.getGroupsForUser(user.id),
+    cases: user => connectors.getCasesForUser(user.id),
   },
 
   Group: {
     members: group => connectors.getMembersOfGroup(group.id),
+    cases: group => connectors.getCasesForGroup(group.id),
   },
 
   Case: {
