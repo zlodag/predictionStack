@@ -22,10 +22,34 @@ export const typeDefs = gql`
     user: ID!
     group: ID!
   }
-  
+  type Case {
+      id: ID!
+      reference: String!
+#      creator: User!
+#      group: Group
+      deadline: Timestamp!
+#      diagnoses: [Diagnosis!]!
+  }
+#  type Diagnosis {
+#      id: ID!
+#      name: String!
+#      wagers: [Wager!]!
+#      judgement: Judgement
+#  }
+#  type Wager {
+#      id: ID!
+#      user: User!
+#      confidence: Int!
+#  }
+#  type Judgement {
+#      judgedBy: User!
+#      timestamp: Timestamp!
+#      outcome: Boolean!
+#  }
   type Query {
     user (id: ID!): User
-    groups: [Group!]!
+    group (id: ID!): Group
+#    groups: [Group!]!
   }
   
   type Mutation {

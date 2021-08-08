@@ -5,10 +5,13 @@ const pool = new Pool({
 });
 
 // Query
+export const getGroup = (id: string) => pool
+  .query('SELECT id, name FROM "group" WHERE id=$1', [id])
+  .then(result => result.rows[0]);
 
-export const getAllGroups = () => pool
-  .query('SELECT id, name FROM "group" ORDER BY id')
-  .then(result => result.rows);
+// export const getAllGroups = () => pool
+//   .query('SELECT id, name FROM "group" ORDER BY id')
+//   .then(result => result.rows);
 
 export const getMembersOfGroup = (groupId: string) => pool
   .query('SELECT u.id, u.name, u.created FROM "user" u INNER JOIN user_group x ON x.user=u.id AND x.group=$1 ORDER BY u.id', [groupId])

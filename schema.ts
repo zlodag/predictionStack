@@ -7,7 +7,8 @@ import * as connectors from './db/connectors';
 
 const resolvers : Resolvers = {
   Query: {
-    groups: connectors.getAllGroups,
+    // groups: connectors.getAllGroups,
+    group: (_, {id}) => connectors.getGroup(id),
     user: (_, {id}) => connectors.getUser(id),
   },
 
