@@ -8,5 +8,4 @@ generates:
     config:
       strictScalars: true
       scalars:
-        ID: number
         Timestamp: GraphQLScalarType
