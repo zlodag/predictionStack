@@ -18,14 +18,23 @@ export const typeDefs = gql`
       name: String!
       members: [User!]!
   }
-type Query {
-  user (id: ID!): User
-  groups: [Group!]!
-}
-
-type Mutation {
-  addUser (
-      # Name for the User item
-      name: String!): User!
-}
+  type Membership {
+    user: ID!
+    group: ID!
+  }
+  
+  type Query {
+    user (id: ID!): User
+    groups: [Group!]!
+  }
+  
+  type Mutation {
+    addUser (
+        name: String!
+    ): User!
+    addUserToGroup(
+        user: ID!
+        group: ID!
+    ): Membership!
+  }
 `;

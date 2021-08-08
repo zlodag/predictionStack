@@ -4,6 +4,8 @@ const pool = new Pool({
   database: 'predictions',
 });
 
+// Query
+
 export const getAllGroups = () => pool
   .query('SELECT id, name FROM "group" ORDER BY id')
   .then(result => result.rows);
@@ -20,7 +22,12 @@ export const getUser = (id: string) => pool
   .query('SELECT id, name, created FROM "user" WHERE id=$1', [id])
   .then(result => result.rows[0]);
 
+// Mutation
+
 export const addUser = (name: string) => pool
   .query('INSERT INTO "user" (name) VALUES ($1) RETURNING id, name, created', [name])
   .then(result => result.rows[0]);
 
+export const addUserToGroup = (user_id: string, group_id: string) => pool
+  .query('INSERT INTO "user_group" ("user", "group") VALUES($1, $2) RETURNING "user", "group"', [user_id, group_id])
+  .then(result => result.rows[0]);

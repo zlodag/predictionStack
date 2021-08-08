@@ -3,30 +3,25 @@ import {makeExecutableSchema} from '@graphql-tools/schema';
 import {typeDefs} from './typeDefs';
 import {Resolvers} from './generated/graphql';
 
-import {
-  getUser,
-  getAllGroups,
-  addUser,
-  getGroupsForUser,
-  getMembersOfGroup,
-} from './db/connectors';
+import * as connectors from './db/connectors';
 
 const resolvers : Resolvers = {
   Query: {
-    groups: getAllGroups,
-    user: (_, {id}) => getUser(id),
+    groups: connectors.getAllGroups,
+    user: (_, {id}) => connectors.getUser(id),
   },
 
   Mutation: {
-    addUser: (_, {name}) => addUser(name),
+    addUser: (_, {name}) => connectors.addUser(name),
+    addUserToGroup: (_, {user, group}) => connectors.addUserToGroup(user, group),
   },
 
   User: {
-    groups: user => getGroupsForUser(user.id),
+    groups: user => connectors.getGroupsForUser(user.id),
   },
 
   Group: {
-    members: group => getMembersOfGroup(group.id),
+    members: group => connectors.getMembersOfGroup(group.id),
   },
 
   Timestamp: GraphQLTimestamp
