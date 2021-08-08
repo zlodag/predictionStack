@@ -7,5 +7,7 @@ generates:
       - "typescript-resolvers"
     config:
       strictScalars: true
+#      avoidOptionals:
+#        field: true
       scalars:
         Timestamp: GraphQLScalarType

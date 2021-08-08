@@ -22,11 +22,19 @@ export const typeDefs = gql`
     user: ID!
     group: ID!
   }
+  input CaseInput {
+      reference: String!
+      creatorId: ID!
+      groupId: ID
+      deadline: Timestamp!
+  }
   type Case {
       id: ID!
       reference: String!
-#      creator: User!
-#      group: Group
+      creatorId: ID!
+      creator: User!
+      groupId: ID
+      group: Group
       deadline: Timestamp!
 #      diagnoses: [Diagnosis!]!
   }
@@ -49,9 +57,10 @@ export const typeDefs = gql`
   type Query {
     user (id: ID!): User
     group (id: ID!): Group
-#    groups: [Group!]!
+    case (id: ID!): Case
+      #    groups: [Group!]!
   }
-  
+   
   type Mutation {
     addUser (
         name: String!
@@ -60,5 +69,8 @@ export const typeDefs = gql`
         user: ID!
         group: ID!
     ): Membership!
+    addCase(
+        case: CaseInput!
+    ): Case!
   }
 `;

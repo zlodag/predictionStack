@@ -10,11 +10,13 @@ const resolvers : Resolvers = {
     // groups: connectors.getAllGroups,
     group: (_, {id}) => connectors.getGroup(id),
     user: (_, {id}) => connectors.getUser(id),
+    'case': (_, {id}) => connectors.getCase(id),
   },
 
   Mutation: {
     addUser: (_, {name}) => connectors.addUser(name),
     addUserToGroup: (_, {user, group}) => connectors.addUserToGroup(user, group),
+    addCase: (_, args) => connectors.addCase(args.case),
   },
 
   User: {
@@ -23,6 +25,11 @@ const resolvers : Resolvers = {
 
   Group: {
     members: group => connectors.getMembersOfGroup(group.id),
+  },
+
+  Case: {
+    creator: _case => connectors.getUser(_case.creatorId),
+    group: _case => _case.groupId ? connectors.getGroup(_case.groupId) : null,
   },
 
   Timestamp: GraphQLTimestamp
