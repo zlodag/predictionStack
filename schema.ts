@@ -32,6 +32,21 @@ const resolvers : Resolvers = {
   Case: {
     creator: _case => connectors.getUser(_case.creatorId),
     group: _case => _case.groupId ? connectors.getGroup(_case.groupId) : null,
+    diagnoses: _case => connectors.getDiagnosesForCase(_case.id),
+  },
+
+  Diagnosis: {
+    wagers: diagnosis => connectors.getWagersForDiagnosis(diagnosis.id),
+    judgement: diagnosis => connectors.getJudgement(diagnosis.id),
+  },
+
+  Wager: {
+    creator: wager => connectors.getUser(wager.creatorId),
+  },
+
+  Judgement: {
+    judgedBy: judgement => connectors.getUser(judgement.judgedById),
+    outcome: judgement => judgement.outcome,
   },
 
   Timestamp: GraphQLTimestamp

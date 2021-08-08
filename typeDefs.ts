@@ -4,11 +4,16 @@ import gql from 'graphql-tag';
 
 export const typeDefs = gql`
   scalar Timestamp
+  enum Outcome {
+      right
+      wrong
+      unknown
+  }
   type User  {
       id: ID!
       name: String!
       groups: [Group!]!
-      cases: [Case!]!
+      cases: [Case]!
       created: Timestamp!
   }
   type Group {
@@ -35,29 +40,31 @@ export const typeDefs = gql`
       groupId: ID
       group: Group
       deadline: Timestamp!
-#      diagnoses: [Diagnosis!]!
+      diagnoses: [Diagnosis!]!
   }
-#  type Diagnosis {
-#      id: ID!
-#      name: String!
-#      wagers: [Wager!]!
-#      judgement: Judgement
-#  }
-#  type Wager {
-#      id: ID!
-#      user: User!
-#      confidence: Int!
-#  }
-#  type Judgement {
-#      judgedBy: User!
-#      timestamp: Timestamp!
-#      outcome: Boolean!
-#  }
+  type Diagnosis {
+      id: ID!
+      name: String!
+      wagers: [Wager!]!
+      judgement: Judgement
+  }
+  type Wager {
+      id: ID!
+      creatorId: ID!
+      creator: User!
+      confidence: Int!
+      timestamp: Timestamp!
+  }
+  type Judgement {
+      judgedById: ID!
+      judgedBy: User!
+      timestamp: Timestamp!
+      outcome: Outcome!
+  }
   type Query {
     user (id: ID!): User
     group (id: ID!): Group
     case (id: ID!): Case
-      #    groups: [Group!]!
   }
    
   type Mutation {

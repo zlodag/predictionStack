@@ -25,9 +25,11 @@ export const getCase = (id: string) => pool
   ])
   .then(result => result.rows[0]);
 
-// export const getAllGroups = () => pool
-//   .query('SELECT id, name FROM "group" ORDER BY id')
-//   .then(result => result.rows);
+export const getJudgement = (diagnosisId: string) => pool
+  .query('SELECT "judgedBy" as "judgedById", "timestamp", "outcome" FROM "judgement" WHERE "diagnosisId"=$1', [
+    diagnosisId,
+  ])
+  .then(result => result.rows.length ? result.rows[0] : null);
 
 export const getMembersOfGroup = (groupId: string) => pool
   .query('SELECT u."id", u."name", u."created" FROM "user" AS u INNER JOIN "user_group" AS x ON x."user"=u."id" AND x."group"=$1 ORDER BY u."id"', [
@@ -50,6 +52,18 @@ export const getCasesForUser = (userId: string) => pool
 export const getCasesForGroup = (groupId: string) => pool
   .query('SELECT "id", "reference", "creator" AS "creatorId", "group" AS "groupId", "deadline" FROM "case" WHERE "group"=$1 ORDER BY "deadline"', [
     groupId,
+  ])
+  .then(result => result.rows);
+
+export const getDiagnosesForCase = (caseId: string) => pool
+  .query('SELECT "id", "name" FROM "diagnosis" WHERE "case"=$1 ORDER BY "name"', [
+    caseId,
+  ])
+  .then(result => result.rows);
+
+export const getWagersForDiagnosis = (diagnosisId: string) => pool
+  .query('SELECT "id", "creator" as "creatorId", "confidence", "timestamp" FROM "wager" WHERE "diagnosis"=$1 ORDER BY "timestamp"', [
+    diagnosisId,
   ])
   .then(result => result.rows);
 
