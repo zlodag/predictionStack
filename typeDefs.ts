@@ -5,9 +5,9 @@ import gql from 'graphql-tag';
 export const typeDefs = gql`
   scalar Timestamp
   enum Outcome {
-      right
-      wrong
-      unknown
+      RIGHT
+      WRONG
+      INDETERMINATE
   }
   type User  {
       id: ID!
@@ -62,11 +62,13 @@ export const typeDefs = gql`
       outcome: Outcome!
   }
   type Query {
+    users: [User!]!
     user (id: ID!): User
+    groups: [Group!]!
     group (id: ID!): Group
     case (id: ID!): Case
   }
-   
+  
   type Mutation {
     addUser (
         name: String!

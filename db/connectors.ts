@@ -7,11 +7,19 @@ const pool = new Pool({
 
 // Query
 
+export const getUsers = () => pool
+  .query('SELECT "id", "name", "created" FROM "user" ORDER BY "name"')
+  .then(result => result.rows);
+
 export const getUser = (id: string) => pool
   .query('SELECT "id", "name", "created" FROM "user" WHERE "id"=$1', [
     id,
   ])
   .then(result => result.rows[0]);
+
+export const getGroups = () => pool
+  .query('SELECT "id", "name" FROM "group" ORDER BY "name"')
+  .then(result => result.rows);
 
 export const getGroup = (id: string) => pool
   .query('SELECT "id", "name" FROM "group" WHERE "id"=$1', [
