@@ -2,8 +2,9 @@
   "name": "prediction-stack",
   "version": "0.0.1",
   "description": "",
+  "type": "module",
   "scripts": {
-    "start": "ts-node-dev --project tsconfig.json index.ts",
+    "start": "ts-node-dev --project tsconfig.json server/index.ts",
     "prestart": "npm run codegen",
     "build": "tsc --project ./",
     "codegen": "graphql-codegen --config codegen.yml"

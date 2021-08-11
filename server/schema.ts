@@ -1,9 +1,9 @@
 import {GraphQLTimestamp} from 'graphql-scalars';
 import {makeExecutableSchema} from '@graphql-tools/schema';
-import {typeDefs} from './typeDefs';
-import {Resolvers} from './generated/graphql';
+import {typeDefs} from '../typeDefs';
+import {Resolvers} from '../generated/graphql';
 
-import * as connectors from './db/connectors';
+import * as connectors from './connectors';
 
 const resolvers : Resolvers = {
   Query: {
