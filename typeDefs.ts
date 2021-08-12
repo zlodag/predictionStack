@@ -20,7 +20,7 @@ export const typeDefs = gql`
       id: ID!
       name: String!
       groups: [Group!]!
-      cases: [Case]!
+      cases: [Case!]!
       created: Timestamp!
   }
   type Group implements NamedNode {
