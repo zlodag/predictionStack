@@ -3,20 +3,27 @@
 import gql from 'graphql-tag';
 
 export const typeDefs = gql`
+  # An object with a Globally Unique ID and a name
+  interface NamedNode {
+      # The ID of the object.
+      id: ID!
+      # The name of the object.
+      name: String!
+  }
   scalar Timestamp
   enum Outcome {
       RIGHT
       WRONG
       INDETERMINATE
   }
-  type User  {
+  type User implements NamedNode {
       id: ID!
       name: String!
       groups: [Group!]!
       cases: [Case]!
       created: Timestamp!
   }
-  type Group {
+  type Group implements NamedNode {
       id: ID!
       name: String!
       members: [User!]!
