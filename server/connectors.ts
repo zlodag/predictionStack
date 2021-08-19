@@ -1,4 +1,4 @@
-import {Pool} from "pg";
+import {Pool} from 'pg';
 import {CaseInput} from '../generated/graphql';
 
 const pool = new Pool({
@@ -86,15 +86,42 @@ export const addUser = (name: string) => pool
 export const addUserToGroup = (user_id: string, group_id: string) => pool
   .query('INSERT INTO "user_group" ("user", "group") VALUES($1, $2) RETURNING "user", "group"', [
     user_id,
-    group_id
+    group_id,
   ])
   .then(result => result.rows[0]);
 
-export const addCase = (_case: CaseInput) => pool
-  .query('INSERT INTO "case" ("reference", "creator", "group", "deadline") VALUES ($1, $2, $3, $4) RETURNING "id", "reference", "creator" AS "creatorId", "group" AS "groupId", "deadline"', [
-    _case.reference,
-    _case.creatorId,
-    _case.groupId || null,
-    _case.deadline,
-  ])
-  .then(result => result.rows[0]);
+export const addCase = async (_case: CaseInput) => {
+  if (_case.predictions.length === 0) throw Error('Case must have at least 1 prediction');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const insertCaseText = 'INSERT INTO "case" ("reference", "creator", "group", "deadline") VALUES ($1, $2, $3, $4) RETURNING "id"';
+    const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2) RETURNING "id"';
+    const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
+    const insertCaseRes = await client.query(insertCaseText, [
+      _case.reference,
+      _case.creatorId,
+      _case.groupId || null,
+      _case.deadline,
+    ]);
+    for (const prediction of _case.predictions) {
+      const insertDiagnosisRes = await client.query(insertDiagnosisText, [
+        prediction.diagnosis,
+        insertCaseRes.rows[0].id,
+      ]);
+      await client.query(insertWagerText, [
+        _case.creatorId,
+        prediction.confidence,
+        insertDiagnosisRes.rows[0].id,
+      ]);
+    }
+    await client.query('COMMIT');
+    return insertCaseRes.rows[0].id;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+
+};

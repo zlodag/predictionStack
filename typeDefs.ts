@@ -38,6 +38,11 @@ export const typeDefs = gql`
       creatorId: ID!
       groupId: ID
       deadline: Timestamp!
+      predictions: [PredictionInput!]!
+  }
+  input PredictionInput {
+      diagnosis: String!
+      confidence: Int!
   }
   type Case {
       id: ID!
@@ -86,6 +91,6 @@ export const typeDefs = gql`
     ): Membership!
     addCase(
         case: CaseInput!
-    ): Case!
+    ): ID!
   }
 `;
