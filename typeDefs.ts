@@ -76,7 +76,7 @@ export const typeDefs = gql`
   type Query {
     users: [User!]!
     user (id: ID!): User
-    groups: [Group!]!
+    groups (userId: ID): [Group!]!
     group (id: ID!): Group
     case (id: ID!): Case
   }

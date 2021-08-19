@@ -9,7 +9,7 @@ const resolvers : Resolvers = {
   Query: {
     users: connectors.getUsers,
     user: (_, {id}) => connectors.getUser(id),
-    groups: connectors.getGroups,
+    groups: (_, {userId}) => userId ? connectors.getGroupsForUser(userId) : connectors.getGroups(),
     group: (_, {id}) => connectors.getGroup(id),
     'case': (_, {id}) => connectors.getCase(id),
   },
