@@ -34,6 +34,7 @@ const resolvers : Resolvers = {
     creator: _case => connectors.getUser(_case.creatorId),
     group: _case => _case.groupId ? connectors.getGroup(_case.groupId) : null,
     diagnoses: _case => connectors.getDiagnosesForCase(_case.id),
+    comments: _case => connectors.getCommentsForCase(_case.id),
   },
 
   Diagnosis: {
@@ -48,6 +49,10 @@ const resolvers : Resolvers = {
   Judgement: {
     judgedBy: judgement => connectors.getUser(judgement.judgedById),
     outcome: judgement => judgement.outcome,
+  },
+
+  Comment: {
+    creator: comment => connectors.getUser(comment.creatorId),
   },
 
   Timestamp: GraphQLTimestamp

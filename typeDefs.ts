@@ -53,6 +53,7 @@ export const typeDefs = gql`
       group: Group
       deadline: Timestamp!
       diagnoses: [Diagnosis!]!
+      comments: [Comment!]!
   }
   type Diagnosis {
       id: ID!
@@ -72,6 +73,12 @@ export const typeDefs = gql`
       judgedBy: User!
       timestamp: Timestamp!
       outcome: Outcome!
+  }
+  type Comment {
+      creatorId: ID!
+      creator: User!
+      timestamp: Timestamp!
+      text: String!
   }
   type Query {
     users: [User!]!

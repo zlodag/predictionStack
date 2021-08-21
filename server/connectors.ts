@@ -75,6 +75,12 @@ export const getWagersForDiagnosis = (diagnosisId: string) => pool
   ])
   .then(result => result.rows);
 
+export const getCommentsForCase = (caseId: string) => pool
+  .query('SELECT "creator" as "creatorId", "timestamp", "text" FROM "comment" WHERE "case"=$1 ORDER BY "timestamp"', [
+    caseId,
+  ])
+  .then(result => result.rows);
+
 // Mutation
 
 export const addUser = (name: string) => pool
