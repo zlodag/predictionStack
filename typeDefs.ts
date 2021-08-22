@@ -99,5 +99,10 @@ export const typeDefs = gql`
     addCase(
         case: CaseInput!
     ): ID!
+    addComment(
+        creatorId: ID!
+        case: ID!
+        text: String!
+    ): Comment!
   }
 `;

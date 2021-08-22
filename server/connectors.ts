@@ -89,10 +89,10 @@ export const addUser = (name: string) => pool
   ])
   .then(result => result.rows[0]);
 
-export const addUserToGroup = (user_id: string, group_id: string) => pool
+export const addUserToGroup = (userId: string, groupId: string) => pool
   .query('INSERT INTO "user_group" ("user", "group") VALUES($1, $2) RETURNING "user", "group"', [
-    user_id,
-    group_id,
+    userId,
+    groupId,
   ])
   .then(result => result.rows[0]);
 
@@ -105,14 +105,14 @@ export const addCase = async (_case: CaseInput) => {
     const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2) RETURNING "id"';
     const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
     const insertCaseRes = await client.query(insertCaseText, [
-      _case.reference,
+      _case.reference.trim(),
       _case.creatorId,
       _case.groupId || null,
       _case.deadline,
     ]);
     for (const prediction of _case.predictions) {
       const insertDiagnosisRes = await client.query(insertDiagnosisText, [
-        prediction.diagnosis,
+        prediction.diagnosis.trim(),
         insertCaseRes.rows[0].id,
       ]);
       await client.query(insertWagerText, [
@@ -131,3 +131,12 @@ export const addCase = async (_case: CaseInput) => {
   }
 
 };
+
+export const addComment = (userId: string, caseId: string, text: string) => pool
+  .query('INSERT INTO "comment" ("creator", "case", "text") VALUES($1, $2, $3) RETURNING "creator" as "creatorId", "timestamp", "text"', [
+    userId,
+    caseId,
+    text.trim(),
+  ])
+  .then(result => result.rows[0]);
+

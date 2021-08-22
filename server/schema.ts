@@ -18,6 +18,7 @@ const resolvers : Resolvers = {
     addUser: (_, {name}) => connectors.addUser(name),
     addUserToGroup: (_, {user, group}) => connectors.addUserToGroup(user, group),
     addCase: (_, args) => connectors.addCase(args.case),
+    addComment: (_, args) => connectors.addComment(args.creatorId, args.case, args.text),
   },
 
   User: {
