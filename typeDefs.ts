@@ -104,5 +104,9 @@ export const typeDefs = gql`
         case: ID!
         text: String!
     ): Comment!
+    changeGroup(
+        caseId: ID!
+        newGroupId: ID
+    ): Group
   }
 `;

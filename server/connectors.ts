@@ -140,3 +140,9 @@ export const addComment = (userId: string, caseId: string, text: string) => pool
   ])
   .then(result => result.rows[0]);
 
+export const changeGroup = (caseId: string, newGroupId: string | null) => pool
+  .query('WITH "newGroup" AS (UPDATE "case" SET "group" = $1 WHERE "id" = $2 RETURNING "group" as "id") SELECT "id", "name" FROM "newGroup" JOIN "group" USING ("id")', [
+    newGroupId,
+    caseId,
+  ])
+  .then(result => result.rows.length ? result.rows[0] : null);
