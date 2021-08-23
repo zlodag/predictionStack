@@ -19,6 +19,7 @@ const resolvers : Resolvers = {
     addUserToGroup: (_, {user, group}) => connectors.addUserToGroup(user, group),
     addCase: (_, args) => connectors.addCase(args.case),
     addComment: (_, args) => connectors.addComment(args.creatorId, args.case, args.text),
+    addWager: (_, {creatorId, diagnosisId, confidence}) => connectors.addWager(creatorId, diagnosisId, confidence),
     changeGroup: (_, {caseId, newGroupId}) => {
       if (newGroupId === undefined) throw Error ("newGroupId cannot be undefined")
       return connectors.changeGroup(caseId, newGroupId)

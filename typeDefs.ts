@@ -104,6 +104,11 @@ export const typeDefs = gql`
         case: ID!
         text: String!
     ): Comment!
+    addWager(
+        creatorId: ID!
+        diagnosisId: ID!
+        confidence: Int!
+    ): Wager!
     changeGroup(
         caseId: ID!
         newGroupId: ID

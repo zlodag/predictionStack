@@ -1,6 +1,8 @@
 import {Pool} from 'pg';
 import {CaseInput} from '../generated/graphql';
 
+const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
+
 const pool = new Pool({
   database: 'predictions',
 });
@@ -103,7 +105,6 @@ export const addCase = async (_case: CaseInput) => {
     await client.query('BEGIN');
     const insertCaseText = 'INSERT INTO "case" ("reference", "creator", "group", "deadline") VALUES ($1, $2, $3, $4) RETURNING "id"';
     const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2) RETURNING "id"';
-    const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
     const insertCaseRes = await client.query(insertCaseText, [
       _case.reference.trim(),
       _case.creatorId,
@@ -137,6 +138,14 @@ export const addComment = (userId: string, caseId: string, text: string) => pool
     userId,
     caseId,
     text.trim(),
+  ])
+  .then(result => result.rows[0]);
+
+export const addWager = (userId: string, diagnosisId: string, confidence: number) => pool
+  .query(insertWagerText + ' RETURNING "id", "creator" as "creatorId", "confidence", "timestamp"', [
+    userId,
+    confidence,
+    diagnosisId,
   ])
   .then(result => result.rows[0]);
 
