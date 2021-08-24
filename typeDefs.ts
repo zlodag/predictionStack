@@ -113,5 +113,10 @@ export const typeDefs = gql`
         caseId: ID!
         newGroupId: ID
     ): Group
+    judgeOutcome(
+        diagnosisId: ID!
+        judgedById: ID!
+        outcome: Outcome!
+    ) : Judgement!
   }
 `;

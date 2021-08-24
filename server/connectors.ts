@@ -1,5 +1,5 @@
 import {Pool} from 'pg';
-import {CaseInput} from '../generated/graphql';
+import {CaseInput, Outcome} from '../generated/graphql';
 
 const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
 
@@ -155,3 +155,11 @@ export const changeGroup = (caseId: string, newGroupId: string | null) => pool
     caseId,
   ])
   .then(result => result.rows.length ? result.rows[0] : null);
+
+export const judgeOutcome = (diagnosisId: string, judgedById: string, outcome: Outcome) => pool
+  .query('INSERT INTO "judgement" ("diagnosisId", "judgedBy", "outcome") VALUES($1, $2, $3) RETURNING "judgedBy" as "judgedById", "timestamp", "outcome"', [
+    diagnosisId,
+    judgedById,
+    outcome,
+  ])
+  .then(result => result.rows[0]);
