@@ -97,13 +97,18 @@ export const typeDefs = gql`
         group: ID!
     ): Membership!
     addCase(
-        case: CaseInput!
+        caseInput: CaseInput!
     ): ID!
     addComment(
         creatorId: ID!
-        case: ID!
+        caseId: ID!
         text: String!
     ): Comment!
+    addDiagnosis(
+        creatorId: ID!
+        caseId: ID!
+        prediction: PredictionInput!
+    ): Diagnosis!
     addWager(
         creatorId: ID!
         diagnosisId: ID!

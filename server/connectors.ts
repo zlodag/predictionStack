@@ -1,6 +1,7 @@
 import {Pool} from 'pg';
-import {CaseInput, Outcome} from '../generated/graphql';
+import {CaseInput, Outcome, PredictionInput} from '../generated/graphql';
 
+const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2)';
 const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
 
 const pool = new Pool({
@@ -66,7 +67,7 @@ export const getCasesForGroup = (groupId: string) => pool
   .then(result => result.rows);
 
 export const getDiagnosesForCase = (caseId: string) => pool
-  .query('SELECT "id", "name" FROM "diagnosis" WHERE "case"=$1 ORDER BY "name"', [
+  .query('SELECT "id", "name" FROM "diagnosis" WHERE "case"=$1 ORDER BY "pk"', [
     caseId,
   ])
   .then(result => result.rows);
@@ -104,7 +105,6 @@ export const addCase = async (_case: CaseInput) => {
   try {
     await client.query('BEGIN');
     const insertCaseText = 'INSERT INTO "case" ("reference", "creator", "group", "deadline") VALUES ($1, $2, $3, $4) RETURNING "id"';
-    const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2) RETURNING "id"';
     const insertCaseRes = await client.query(insertCaseText, [
       _case.reference.trim(),
       _case.creatorId,
@@ -112,7 +112,7 @@ export const addCase = async (_case: CaseInput) => {
       _case.deadline,
     ]);
     for (const prediction of _case.predictions) {
-      const insertDiagnosisRes = await client.query(insertDiagnosisText, [
+      const insertDiagnosisRes = await client.query(insertDiagnosisText + ' RETURNING "id"', [
         prediction.diagnosis.trim(),
         insertCaseRes.rows[0].id,
       ]);
@@ -132,6 +132,32 @@ export const addCase = async (_case: CaseInput) => {
   }
 
 };
+
+
+export const addDiagnosis = async (userId: string, caseId: string, prediction: PredictionInput) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const insertDiagnosisRes = await client.query(insertDiagnosisText + ' RETURNING "id", "name"', [
+      prediction.diagnosis.trim(),
+      caseId,
+    ]);
+    await client.query(insertWagerText, [
+      userId,
+      prediction.confidence,
+      insertDiagnosisRes.rows[0].id,
+    ]);
+    await client.query('COMMIT');
+    return insertDiagnosisRes.rows[0];
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+
+};
+
 
 export const addComment = (userId: string, caseId: string, text: string) => pool
   .query('INSERT INTO "comment" ("creator", "case", "text") VALUES($1, $2, $3) RETURNING "creator" as "creatorId", "timestamp", "text"', [

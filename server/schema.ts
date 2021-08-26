@@ -17,8 +17,9 @@ const resolvers : Resolvers = {
   Mutation: {
     addUser: (_, {name}) => connectors.addUser(name),
     addUserToGroup: (_, {user, group}) => connectors.addUserToGroup(user, group),
-    addCase: (_, args) => connectors.addCase(args.case),
-    addComment: (_, args) => connectors.addComment(args.creatorId, args.case, args.text),
+    addCase: (_, {caseInput}) => connectors.addCase(caseInput),
+    addComment: (_, {creatorId, caseId, text}) => connectors.addComment(creatorId, caseId, text),
+    addDiagnosis: (_, {creatorId, caseId, prediction}) => connectors.addDiagnosis(creatorId, caseId, prediction),
     addWager: (_, {creatorId, diagnosisId, confidence}) => connectors.addWager(creatorId, diagnosisId, confidence),
     changeGroup: (_, {caseId, newGroupId}) => {
       if (newGroupId === undefined) throw Error ("newGroupId cannot be undefined")
