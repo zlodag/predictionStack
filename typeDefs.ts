@@ -22,6 +22,8 @@ export const typeDefs = gql`
       groups: [Group!]!
       cases: [Case!]!
       created: Timestamp!
+      score (adjusted: Boolean!): Float
+      scores: [Score!]!
   }
   type Group implements NamedNode {
       id: ID!
@@ -80,12 +82,23 @@ export const typeDefs = gql`
       timestamp: Timestamp!
       text: String!
   }
+  type Score {
+      judged: Timestamp!
+      caseId: ID!
+      reference: String!
+      diagnosis: String!
+      confidence: Int!
+      outcome: Outcome!
+      brierScore: Float!
+      averageBrierScore: Float!
+      adjustedBrierScore: Float!
+  }
   type Query {
     users: [User!]!
-    user (id: ID!): User
+    user (id: ID!): User!
     groups (userId: ID): [Group!]!
-    group (id: ID!): Group
-    case (id: ID!): Case
+    group (id: ID!): Group!
+    case (id: ID!): Case!
   }
   
   type Mutation {

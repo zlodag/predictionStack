@@ -31,6 +31,12 @@ const resolvers : Resolvers = {
   User: {
     groups: user => connectors.getGroupsForUser(user.id),
     cases: user => connectors.getCasesForUser(user.id),
+    score: (user, {adjusted}) => connectors.getScore(user.id, adjusted),
+    scores: user => connectors.getScores(user.id),
+  },
+
+  Score: {
+    outcome: score => score.outcome,
   },
 
   Group: {

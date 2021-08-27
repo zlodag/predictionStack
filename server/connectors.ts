@@ -18,7 +18,10 @@ export const getUser = (id: string) => pool
   .query('SELECT "id", "name", "created" FROM "user" WHERE "id"=$1', [
     id,
   ])
-  .then(result => result.rows[0]);
+  .then(result => {
+    if (result.rows.length == 0) throw Error("Invalid user ID: " + id)
+    return result.rows[0];
+  });
 
 export const getGroups = () => pool
   .query('SELECT "id", "name" FROM "group" ORDER BY "name"')
@@ -28,13 +31,19 @@ export const getGroup = (id: string) => pool
   .query('SELECT "id", "name" FROM "group" WHERE "id"=$1', [
     id,
   ])
-  .then(result => result.rows[0]);
+  .then(result => {
+    if (result.rows.length == 0) throw Error("Invalid group ID: " + id)
+    return result.rows[0];
+  });
 
 export const getCase = (id: string) => pool
   .query('SELECT "id", "reference", "creator" AS "creatorId", "group" AS "groupId", "deadline" FROM "case" WHERE "id"=$1', [
     id,
   ])
-  .then(result => result.rows[0]);
+  .then(result => {
+    if (result.rows.length == 0) throw Error("Invalid case ID: " + id)
+    return result.rows[0];
+  });
 
 export const getJudgement = (diagnosisId: string) => pool
   .query('SELECT "judgedBy" as "judgedById", "timestamp", "outcome" FROM "judgement" WHERE "diagnosisId"=$1', [
@@ -189,3 +198,16 @@ export const judgeOutcome = (diagnosisId: string, judgedById: string, outcome: O
     outcome,
   ])
   .then(result => result.rows[0]);
+
+export const getScore = (userId: string, adjusted: boolean) => pool
+  .query('WITH "data" AS (SELECT ("confidence"/100.0 - CASE "outcome" WHEN \'RIGHT\' THEN 1 WHEN \'WRONG\' THEN 0 ELSE NULL END) ^ 2 AS "score" FROM "wager" INNER JOIN "judgement" ON "wager"."diagnosis" = "judgement"."diagnosisId" WHERE "wager"."creator" = $1) SELECT AVG("score")' + (adjusted ? ' + 1 / SQRT(COUNT("score"))' : '') + ' AS "score" FROM "data"', [
+    userId
+  ])
+  .then(result => result.rows[0].score);
+
+
+export const getScores = (userId: string) => pool
+  .query('WITH "data" AS (SELECT "judgement"."timestamp", "diagnosisId", "wager"."confidence", "outcome", ("confidence"/100.0 - CASE "outcome" WHEN \'RIGHT\' THEN 1 ELSE 0 END) ^ 2 AS "score" FROM "wager" INNER JOIN "judgement" ON "wager"."diagnosis" = "judgement"."diagnosisId"  WHERE "wager"."creator" = $1 AND "judgement"."outcome" <> \'INDETERMINATE\') SELECT "data"."timestamp" AS "judged", "case"."id" AS "caseId", "case"."reference", "diagnosis"."name" as "diagnosis", "confidence", "data"."outcome", "score" AS "brierScore", AVG("score") OVER "w" AS "averageBrierScore", AVG("score") OVER "w" + 1 / SQRT(COUNT("score") OVER "w") AS "adjustedBrierScore" FROM "data" INNER JOIN "diagnosis" ON "data"."diagnosisId" = "diagnosis"."id" INNER JOIN "case" ON "diagnosis"."case" = "case"."id" WINDOW "w" AS (ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)', [
+    userId
+  ])
+  .then(result => result.rows);
