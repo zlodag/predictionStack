@@ -19,7 +19,7 @@ export const getUser = (id: string) => pool
     id,
   ])
   .then(result => {
-    if (result.rows.length == 0) throw Error("Invalid user ID: " + id)
+    if (result.rows.length == 0) throw Error('Invalid user ID: ' + id);
     return result.rows[0];
   });
 
@@ -32,7 +32,7 @@ export const getGroup = (id: string) => pool
     id,
   ])
   .then(result => {
-    if (result.rows.length == 0) throw Error("Invalid group ID: " + id)
+    if (result.rows.length == 0) throw Error('Invalid group ID: ' + id);
     return result.rows[0];
   });
 
@@ -41,7 +41,7 @@ export const getCase = (id: string) => pool
     id,
   ])
   .then(result => {
-    if (result.rows.length == 0) throw Error("Invalid case ID: " + id)
+    if (result.rows.length == 0) throw Error('Invalid case ID: ' + id);
     return result.rows[0];
   });
 
@@ -200,14 +200,56 @@ export const judgeOutcome = (diagnosisId: string, judgedById: string, outcome: O
   .then(result => result.rows[0]);
 
 export const getScore = (userId: string, adjusted: boolean) => pool
-  .query('WITH "data" AS (SELECT ("confidence"/100.0 - CASE "outcome" WHEN \'RIGHT\' THEN 1 WHEN \'WRONG\' THEN 0 ELSE NULL END) ^ 2 AS "score" FROM "wager" INNER JOIN "judgement" ON "wager"."diagnosis" = "judgement"."diagnosisId" WHERE "wager"."creator" = $1) SELECT AVG("score")' + (adjusted ? ' + 1 / SQRT(COUNT("score"))' : '') + ' AS "score" FROM "data"', [
-    userId
+  .query(`
+      WITH "data" AS (
+        SELECT
+          ("confidence" / 100.0 - CASE "outcome" WHEN 'RIGHT' THEN 1 WHEN 'WRONG' THEN 0 ELSE NULL END) ^ 2 AS "score"
+        FROM
+          "wager"
+          INNER JOIN "judgement" ON "wager"."diagnosis" = "judgement"."diagnosisId"
+        WHERE "wager"."creator" = $1
+      )
+      SELECT
+        avg("score") ${adjusted ? '+ 1 / sqrt(count("score"))' : ''} AS "score"
+      FROM
+        "data"
+  `, [
+    userId,
   ])
   .then(result => result.rows[0].score);
 
 
 export const getScores = (userId: string) => pool
-  .query('WITH "data" AS (SELECT "judgement"."timestamp", "diagnosisId", "wager"."confidence", "outcome", ("confidence"/100.0 - CASE "outcome" WHEN \'RIGHT\' THEN 1 ELSE 0 END) ^ 2 AS "score" FROM "wager" INNER JOIN "judgement" ON "wager"."diagnosis" = "judgement"."diagnosisId"  WHERE "wager"."creator" = $1 AND "judgement"."outcome" <> \'INDETERMINATE\') SELECT "data"."timestamp" AS "judged", "case"."id" AS "caseId", "case"."reference", "diagnosis"."name" as "diagnosis", "confidence", "data"."outcome", "score" AS "brierScore", AVG("score") OVER "w" AS "averageBrierScore", AVG("score") OVER "w" + 1 / SQRT(COUNT("score") OVER "w") AS "adjustedBrierScore" FROM "data" INNER JOIN "diagnosis" ON "data"."diagnosisId" = "diagnosis"."id" INNER JOIN "case" ON "diagnosis"."case" = "case"."id" WINDOW "w" AS (ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)', [
-    userId
-  ])
+  .query(`
+      WITH "data" AS (
+        SELECT
+          "judgement"."timestamp",
+          "judgement"."diagnosisId",
+          "wager"."confidence",
+          "judgement"."outcome",
+          ("wager"."confidence" / 100.0 - CASE "outcome" WHEN 'RIGHT' THEN 1 WHEN 'WRONG' THEN 0 ELSE NULL END) ^ 2 AS "score"
+        FROM
+          "wager"
+          INNER JOIN "judgement" ON "wager"."diagnosis" = "judgement"."diagnosisId"
+        WHERE "wager"."creator" = $1 AND "judgement"."outcome" <> 'INDETERMINATE'
+      )
+      SELECT
+        "data"."timestamp" AS "judged",
+        "case"."id" AS "caseId",
+        "case"."reference",
+        "diagnosis"."name" AS "diagnosis",
+        "data"."confidence",
+        "data"."outcome",
+        "data"."score" AS "brierScore",
+        avg("score") over "w" AS "averageBrierScore",
+        avg("score") over "w" + 1 / sqrt(count("score") over "w") AS "adjustedBrierScore"
+      FROM
+        "data"
+        INNER JOIN "diagnosis" ON "data"."diagnosisId" = "diagnosis"."id"
+        INNER JOIN "case" ON "diagnosis"."case" = "case"."id"
+      WINDOW
+        "w" AS (ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+    `, [
+      userId,
+    ])
   .then(result => result.rows);
