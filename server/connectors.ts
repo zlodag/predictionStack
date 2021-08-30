@@ -1,5 +1,5 @@
 import {Pool} from 'pg';
-import {CaseInput, Outcome, PredictionInput} from '../generated/graphql';
+import {CaseInput, Outcome, PredictionInput, Scalars} from '../generated/graphql';
 
 const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2)';
 const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
@@ -190,6 +190,13 @@ export const changeGroup = (caseId: string, newGroupId: string | null) => pool
     caseId,
   ])
   .then(result => result.rows.length ? result.rows[0] : null);
+
+export const changeDeadline = (caseId: string, newDeadline: Scalars["Timestamp"]) => pool
+  .query('UPDATE "case" SET "deadline" = $1 WHERE "id" = $2 RETURNING "deadline"', [
+    newDeadline,
+    caseId,
+  ])
+  .then(result => result.rows.length ? result.rows[0].deadline : null);
 
 export const judgeOutcome = (diagnosisId: string, judgedById: string, outcome: Outcome) => pool
   .query('INSERT INTO "judgement" ("diagnosisId", "judgedBy", "outcome") VALUES($1, $2, $3) RETURNING "judgedBy" as "judgedById", "timestamp", "outcome"', [

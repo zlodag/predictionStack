@@ -25,6 +25,7 @@ const resolvers : Resolvers = {
       if (newGroupId === undefined) throw Error ("newGroupId cannot be undefined")
       return connectors.changeGroup(caseId, newGroupId)
     },
+    changeDeadline: (_, {caseId, newDeadline}) => connectors.changeDeadline(caseId, newDeadline),
     judgeOutcome: (_, {diagnosisId, judgedById, outcome}) => connectors.judgeOutcome(diagnosisId, judgedById, outcome),
   },
 

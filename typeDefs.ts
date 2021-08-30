@@ -131,6 +131,10 @@ export const typeDefs = gql`
         caseId: ID!
         newGroupId: ID
     ): Group
+    changeDeadline(
+        caseId: ID!
+        newDeadline: Timestamp!
+    ): Timestamp!
     judgeOutcome(
         diagnosisId: ID!
         judgedById: ID!
