@@ -12,7 +12,7 @@ const resolvers : Resolvers = {
     groups: (_, {userId}) => userId ? connectors.getGroupsForUser(userId) : connectors.getGroups(),
     group: (_, {id}) => connectors.getGroup(id),
     'case': (_, {id}) => connectors.getCase(id),
-    activity: (_, {userId, limit}) => connectors.getActivity(userId, limit),
+    events: (_, {userId, limit}) => connectors.getEvents(userId, limit),
   },
 
   Mutation: {
@@ -37,9 +37,17 @@ const resolvers : Resolvers = {
     scores: user => connectors.getScores(user.id),
   },
 
-  Activity: {
-    // @ts-ignore
-    __resolveType: (obj, context, info) => obj.outcome ? 'JudgementActivity' : obj.confidence ? 'WagerActivity' : 'CommentActivity',
+  Event: {
+    __resolveType: (obj, context, info) =>
+      // @ts-ignore
+      obj.confidence ? 'WagerActivity' :
+      // @ts-ignore
+      obj.outcome ? 'JudgementActivity' :
+      // @ts-ignore
+      (obj.comment != null) ? 'CommentActivity' :
+      // @ts-ignore
+      obj.groupId ? 'GroupCaseActivity' :
+      'DeadlineEvent',
   },
 
   JudgementActivity : {

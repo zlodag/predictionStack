@@ -261,66 +261,107 @@ export const getScores = (userId: string) => pool
     ]})
   .then(result => result.rows);
 
-export const getActivity = (userId: string, limit: number) => pool
+export const getEvents = (userId: string, limit: number) => pool
   .query({name: 'get-activity', text: `
-WITH "case" AS (
-  SELECT DISTINCT
-    "case"."id",
-    "case"."reference",
-    "case"."creator"
-  FROM "case"
-  INNER JOIN "diagnosis" ON "diagnosis"."case" = "case"."id"
-  INNER JOIN "wager" ON "wager"."diagnosis" = "diagnosis"."id"
-  LEFT JOIN "judgement" ON "diagnosis"."id" = "judgement"."diagnosisId"
-  FULL OUTER JOIN "comment" ON "comment"."case" = "case"."id"
-  WHERE $1 IN ("case"."creator", "wager"."creator", "judgement"."judgedBy", "comment"."creator")
-)
-SELECT
-"user"."id" as "userId",
-  "user"."name" as "userName",
-  "case"."id" as "caseId",
-  "case"."reference" as "caseReference",
-  "diagnosis"."name" as "diagnosis",
-  "wager"."confidence",
-  "judgement"."outcome",
-  NULL as "comment",
-  "judgement"."timestamp"
-FROM "judgement"
-INNER JOIN "user" ON "judgement"."judgedBy" = "user"."id"
-LEFT JOIN "wager" ON "judgement"."diagnosisId" = "wager"."diagnosis"
-INNER JOIN "diagnosis" ON "wager"."diagnosis" = "diagnosis"."id"
-INNER JOIN "case" ON "diagnosis"."case" = "case"."id"
-UNION ALL
-SELECT
-"user"."id",
-  "user"."name",
-  "case"."id",
-  "case"."reference",
-  "diagnosis"."name",
-  "wager"."confidence",
-  NULL,
-  NULL,
-  "wager"."timestamp"
-FROM "wager"
-INNER JOIN "user" ON "wager"."creator" = "user"."id"
-INNER JOIN "diagnosis" ON "wager"."diagnosis" = "diagnosis"."id"
-INNER JOIN "case" ON "diagnosis"."case" = "case"."id"
-UNION ALL
-SELECT
-"user"."id",
-  "user"."name",
-  "case"."id",
-  "case"."reference",
-  NULL,
-  NULL,
-  NULL,
-  "comment"."text",
-  "comment"."timestamp"
-FROM
-"comment"
-INNER JOIN "case" ON "comment"."case" = "case"."id"
-INNER JOIN "user" ON "case"."creator" = "user"."id"
-ORDER BY "timestamp" DESC LIMIT $2
+      WITH "interested" AS (
+          SELECT DISTINCT
+              "case"."id",
+              "case"."reference",
+              "case"."creator",
+              "case"."deadline"
+          FROM "case"
+                   INNER JOIN "diagnosis" ON "diagnosis"."case" = "case"."id"
+                   INNER JOIN "wager" ON "wager"."diagnosis" = "diagnosis"."id"
+                   LEFT JOIN "judgement" ON "diagnosis"."id" = "judgement"."diagnosisId"
+                   FULL OUTER JOIN "comment" ON "comment"."case" = "case"."id"
+          WHERE $1 IN ("case"."creator", "wager"."creator", "judgement"."judgedBy", "comment"."creator")
+      )
+      SELECT
+          "interested"."id" AS "caseId",
+          "interested"."reference" AS "caseReference",
+          "user"."id" AS "userId",
+          "user"."name" AS "userName",
+          CAST(NULL AS uuid) AS "groupId",
+          NULL AS "groupName",
+          "diagnosis"."name" AS "diagnosis",
+          "wager"."confidence",
+          "judgement"."outcome",
+          NULL AS "comment",
+          "judgement"."timestamp"
+      FROM "judgement"
+               INNER JOIN "user" ON "judgement"."judgedBy" = "user"."id"
+               LEFT JOIN "wager" ON "judgement"."diagnosisId" = "wager"."diagnosis"
+               INNER JOIN "diagnosis" ON "wager"."diagnosis" = "diagnosis"."id"
+               INNER JOIN "interested" ON "diagnosis"."case" = "interested"."id"
+      UNION ALL
+      SELECT
+          "interested"."id",
+          "interested"."reference",
+          "user"."id",
+          "user"."name",
+          NULL,
+          NULL,
+          "diagnosis"."name",
+          "wager"."confidence",
+          NULL,
+          NULL,
+          "wager"."timestamp"
+      FROM "wager"
+               INNER JOIN "user" ON "wager"."creator" = "user"."id"
+               INNER JOIN "diagnosis" ON "wager"."diagnosis" = "diagnosis"."id"
+               INNER JOIN "interested" ON "diagnosis"."case" = "interested"."id"
+      UNION ALL
+      SELECT
+          "interested"."id",
+          "interested"."reference",
+          "user"."id",
+          "user"."name",
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          "comment"."text",
+          "comment"."timestamp"
+      FROM
+          "comment"
+              INNER JOIN "interested" ON "comment"."case" = "interested"."id"
+              INNER JOIN "user" ON "interested"."creator" = "user"."id"
+      UNION ALL
+      SELECT
+          "interested"."id",
+          "interested"."reference",
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          "interested"."deadline"
+      FROM "interested"
+      WHERE "interested"."deadline" < now()
+      UNION ALL
+      SELECT
+          "case"."id",
+          "case"."reference",
+          "user"."id",
+          "user"."name",
+          "group"."id",
+          "group"."name",
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          "case"."timestamp"
+      FROM "case"
+               JOIN "user_group" USING ("group")
+               JOIN "group" ON "case"."group" = "group"."id"
+               JOIN "user" ON "case"."creator" = "user"."id"
+               LEFT JOIN "interested" ON "case"."id" = "interested"."id"
+      WHERE "interested"."id" IS NULL AND "user_group"."user" = $1
+      ORDER BY "timestamp" DESC LIMIT $2
 `, values: [
     userId,
     limit,

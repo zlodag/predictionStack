@@ -10,12 +10,17 @@ export const typeDefs = gql`
       # The name of the object.
       name: String!
   }
-  interface Activity {
-      userId: ID!
-      userName: String!
+  interface Event {
       caseId: ID!
       caseReference: String!
       timestamp: Timestamp!
+  }
+  interface Activity implements Event {
+      caseId: ID!
+      caseReference: String!
+      timestamp: Timestamp!
+      userId: ID!
+      userName: String!
   }
   scalar Timestamp
   enum Outcome {
@@ -100,7 +105,16 @@ export const typeDefs = gql`
       averageBrierScore: Float!
       adjustedBrierScore: Float!
   }
-  type JudgementActivity implements Activity {
+  type WagerActivity implements Activity & Event {
+      userId: ID!
+      userName: String!
+      caseId: ID!
+      caseReference: String!
+      diagnosis: String!
+      confidence: Int!
+      timestamp: Timestamp!
+  }
+  type JudgementActivity implements Activity & Event {
       userId: ID!
       userName: String!
       caseId: ID!
@@ -110,21 +124,26 @@ export const typeDefs = gql`
       outcome: Outcome!
       timestamp: Timestamp!
   }
-  type WagerActivity implements Activity {
-      userId: ID!
-      userName: String!
-      caseId: ID!
-      caseReference: String!
-      diagnosis: String!
-      confidence: Int!
-      timestamp: Timestamp!
-  }
-  type CommentActivity implements Activity {
+  type CommentActivity implements Activity & Event {
       userId: ID!
       userName: String!
       caseId: ID!
       caseReference: String!
       comment: String!
+      timestamp: Timestamp!
+  }
+  type GroupCaseActivity implements Activity & Event {
+      userId: ID!
+      userName: String!
+      caseId: ID!
+      caseReference: String!
+      groupId: ID!
+      groupName: String!
+      timestamp: Timestamp!
+  }
+  type DeadlineEvent implements Event {
+      caseId: ID!
+      caseReference: String!
       timestamp: Timestamp!
   }
   type Query {
@@ -133,7 +152,7 @@ export const typeDefs = gql`
     groups (userId: ID): [Group!]!
     group (id: ID!): Group!
     case (id: ID!): Case!
-    activity (userId: ID!, limit: Int = 10): [Activity!]!
+    events (userId: ID!, limit: Int = 10): [Event!]!
   }
   
   type Mutation {
