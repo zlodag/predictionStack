@@ -207,7 +207,7 @@ export const judgeOutcome = (diagnosisId: string, judgedById: string, outcome: O
   .then(result => result.rows[0]);
 
 export const getScore = (userId: string, adjusted: boolean) => pool
-  .query(`
+  .query({name: 'get-score', text: `
       WITH "data" AS (
         SELECT
           ("confidence" / 100.0 - CASE "outcome" WHEN 'RIGHT' THEN 1 WHEN 'WRONG' THEN 0 ELSE NULL END) ^ 2 AS "score"
@@ -220,14 +220,14 @@ export const getScore = (userId: string, adjusted: boolean) => pool
         avg("score") ${adjusted ? '+ 1 / sqrt(count("score"))' : ''} AS "score"
       FROM
         "data"
-  `, [
+  `, values: [
     userId,
-  ])
+  ]})
   .then(result => result.rows[0].score);
 
 
 export const getScores = (userId: string) => pool
-  .query(`
+  .query({name: 'get-scores', text: `
       WITH "data" AS (
         SELECT
           "judgement"."timestamp",
@@ -256,7 +256,72 @@ export const getScores = (userId: string) => pool
         INNER JOIN "case" ON "diagnosis"."case" = "case"."id"
       WINDOW
         "w" AS (ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
-    `, [
+    `, values: [
       userId,
-    ])
+    ]})
   .then(result => result.rows);
+
+export const getActivity = (userId: string, limit: number) => pool
+  .query({name: 'get-activity', text: `
+WITH "case" AS (
+  SELECT DISTINCT
+"case"."id",
+  "case"."reference",
+  "case"."creator"
+FROM "case"
+INNER JOIN "diagnosis" ON "diagnosis"."case" = "case"."id"
+INNER JOIN "wager" ON "wager"."diagnosis" = "diagnosis"."id"
+LEFT JOIN "judgement" ON "diagnosis"."id" = "judgement"."diagnosisId"
+FULL OUTER JOIN "comment" ON "comment"."case" = "case"."id"
+WHERE $1 IN ("case"."creator", "wager"."creator", "judgement"."judgedBy", "comment"."creator")
+)
+SELECT
+"user"."id" as "userId",
+  "user"."name" as "userName",
+  "case"."id" as "caseId",
+  "case"."reference" as "caseReference",
+  "diagnosis"."name" as "diagnosis",
+  "wager"."confidence",
+  "judgement"."outcome",
+  NULL as "comment",
+  "judgement"."timestamp"
+FROM "judgement"
+INNER JOIN "user" ON "judgement"."judgedBy" = "user"."id"
+LEFT JOIN "wager" ON "judgement"."diagnosisId" = "wager"."diagnosis"
+INNER JOIN "diagnosis" ON "wager"."diagnosis" = "diagnosis"."id"
+INNER JOIN "case" ON "diagnosis"."case" = "case"."id"
+UNION ALL
+SELECT
+"user"."id",
+  "user"."name",
+  "case"."id",
+  "case"."reference",
+  "diagnosis"."name",
+  "wager"."confidence",
+  NULL,
+  NULL,
+  "wager"."timestamp"
+FROM "wager"
+INNER JOIN "user" ON "wager"."creator" = "user"."id"
+INNER JOIN "diagnosis" ON "wager"."diagnosis" = "diagnosis"."id"
+INNER JOIN "case" ON "diagnosis"."case" = "case"."id"
+UNION ALL
+SELECT
+"user"."id",
+  "user"."name",
+  "case"."id",
+  "case"."reference",
+  NULL,
+  NULL,
+  NULL,
+  "comment"."text",
+  "comment"."timestamp"
+FROM
+"comment"
+INNER JOIN "case" ON "comment"."case" = "case"."id"
+INNER JOIN "user" ON "case"."creator" = "user"."id"
+ORDER BY "timestamp" DESC LIMIT $2
+`, values: [
+    userId,
+    limit,
+  ]}).then(result => result.rows);

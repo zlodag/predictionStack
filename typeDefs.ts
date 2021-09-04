@@ -10,6 +10,13 @@ export const typeDefs = gql`
       # The name of the object.
       name: String!
   }
+  interface Activity {
+      userId: ID!
+      userName: String!
+      caseId: ID!
+      caseReference: String!
+      timestamp: Timestamp!
+  }
   scalar Timestamp
   enum Outcome {
       RIGHT
@@ -93,12 +100,40 @@ export const typeDefs = gql`
       averageBrierScore: Float!
       adjustedBrierScore: Float!
   }
+  type JudgementActivity implements Activity {
+      userId: ID!
+      userName: String!
+      caseId: ID!
+      caseReference: String!
+      diagnosis: String!
+      confidence: Int!
+      outcome: Outcome!
+      timestamp: Timestamp!
+  }
+  type WagerActivity implements Activity {
+      userId: ID!
+      userName: String!
+      caseId: ID!
+      caseReference: String!
+      diagnosis: String!
+      confidence: Int!
+      timestamp: Timestamp!
+  }
+  type CommentActivity implements Activity {
+      userId: ID!
+      userName: String!
+      caseId: ID!
+      caseReference: String!
+      comment: String!
+      timestamp: Timestamp!
+  }
   type Query {
     users: [User!]!
     user (id: ID!): User!
     groups (userId: ID): [Group!]!
     group (id: ID!): Group!
     case (id: ID!): Case!
+    activity (userId: ID!, limit: Int = 10): [Activity!]!
   }
   
   type Mutation {
