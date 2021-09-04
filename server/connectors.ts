@@ -265,15 +265,15 @@ export const getActivity = (userId: string, limit: number) => pool
   .query({name: 'get-activity', text: `
 WITH "case" AS (
   SELECT DISTINCT
-"case"."id",
-  "case"."reference",
-  "case"."creator"
-FROM "case"
-INNER JOIN "diagnosis" ON "diagnosis"."case" = "case"."id"
-INNER JOIN "wager" ON "wager"."diagnosis" = "diagnosis"."id"
-LEFT JOIN "judgement" ON "diagnosis"."id" = "judgement"."diagnosisId"
-FULL OUTER JOIN "comment" ON "comment"."case" = "case"."id"
-WHERE $1 IN ("case"."creator", "wager"."creator", "judgement"."judgedBy", "comment"."creator")
+    "case"."id",
+    "case"."reference",
+    "case"."creator"
+  FROM "case"
+  INNER JOIN "diagnosis" ON "diagnosis"."case" = "case"."id"
+  INNER JOIN "wager" ON "wager"."diagnosis" = "diagnosis"."id"
+  LEFT JOIN "judgement" ON "diagnosis"."id" = "judgement"."diagnosisId"
+  FULL OUTER JOIN "comment" ON "comment"."case" = "case"."id"
+  WHERE $1 IN ("case"."creator", "wager"."creator", "judgement"."judgedBy", "comment"."creator")
 )
 SELECT
 "user"."id" as "userId",
