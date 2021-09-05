@@ -120,7 +120,6 @@ export const typeDefs = gql`
       caseId: ID!
       caseReference: String!
       diagnosis: String!
-      confidence: Int!
       outcome: Outcome!
       timestamp: Timestamp!
   }

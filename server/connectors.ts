@@ -284,14 +284,13 @@ export const getEvents = (userId: string, limit: number) => pool
           CAST(NULL AS uuid) AS "groupId",
           NULL AS "groupName",
           "diagnosis"."name" AS "diagnosis",
-          "wager"."confidence",
+          NULL AS "confidence",
           "judgement"."outcome",
           NULL AS "comment",
           "judgement"."timestamp"
       FROM "judgement"
                INNER JOIN "user" ON "judgement"."judgedBy" = "user"."id"
-               LEFT JOIN "wager" ON "judgement"."diagnosisId" = "wager"."diagnosis"
-               INNER JOIN "diagnosis" ON "wager"."diagnosis" = "diagnosis"."id"
+               INNER JOIN "diagnosis" ON "judgement"."diagnosisId" = "diagnosis"."id"
                INNER JOIN "interested" ON "diagnosis"."case" = "interested"."id"
       UNION ALL
       SELECT
