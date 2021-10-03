@@ -15,7 +15,7 @@ app.use('/graphql', graphqlHTTP({
 }));
 
 app.use('/my_predictions', (req, res) => res.json(mockData));
-
+app.use(express.static(path.join(__dirname, '/../public')))
 app.use((req, res) =>
   res.sendFile(path.join(__dirname, '/../generated/frontend.html'))
 );
