@@ -49,14 +49,21 @@ export const typeDefs = gql`
   }
   input CaseInput {
       reference: String!
+      created: Timestamp
       creatorId: ID!
       groupId: ID
       deadline: Timestamp!
       predictions: [PredictionInput!]!
+      comments: [CommentInput!]!
+  }
+  input CommentInput {
+      text: String!
+      timestamp: Timestamp
   }
   input PredictionInput {
       diagnosis: String!
       confidence: Int!
+      outcome: Outcome
   }
   type Case {
       id: ID!
@@ -193,5 +200,8 @@ export const typeDefs = gql`
         judgedById: ID!
         outcome: Outcome!
     ) : Judgement!
+    importCases(
+        cases: [CaseInput!]!
+    ): Int!
   }
 `;

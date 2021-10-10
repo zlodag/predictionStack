@@ -28,6 +28,7 @@ const resolvers : Resolvers = {
     },
     changeDeadline: (_, {caseId, newDeadline}) => connectors.changeDeadline(caseId, newDeadline),
     judgeOutcome: (_, {diagnosisId, judgedById, outcome}) => connectors.judgeOutcome(diagnosisId, judgedById, outcome),
+    importCases: (_, {cases}) => connectors.importCases(cases),
   },
 
   User: {

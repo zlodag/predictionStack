@@ -1,4 +1,4 @@
-import {Pool} from 'pg';
+import {Pool, PoolClient} from 'pg';
 import {CaseInput, Outcome, PredictionInput, Scalars} from '../generated/graphql';
 
 const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2)';
@@ -109,39 +109,80 @@ export const addUserToGroup = (userId: string, groupId: string) => pool
   .then(result => result.rows[0]);
 
 export const addCase = async (_case: CaseInput) => {
-  if (_case.predictions.length === 0) throw Error('Case must have at least 1 prediction');
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    const insertCaseText = 'INSERT INTO "case" ("reference", "creator", "group", "deadline") VALUES ($1, $2, $3, $4) RETURNING "id"';
-    const insertCaseRes = await client.query(insertCaseText, [
-      _case.reference.trim(),
-      _case.creatorId,
-      _case.groupId || null,
-      _case.deadline,
-    ]);
-    for (const prediction of _case.predictions) {
-      const insertDiagnosisRes = await client.query(insertDiagnosisText + ' RETURNING "id"', [
-        prediction.diagnosis.trim(),
-        insertCaseRes.rows[0].id,
-      ]);
-      await client.query(insertWagerText, [
-        _case.creatorId,
-        prediction.confidence,
-        insertDiagnosisRes.rows[0].id,
-      ]);
-    }
+    const id = await _addCase(_case, client);
     await client.query('COMMIT');
-    return insertCaseRes.rows[0].id;
+    return id;
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;
   } finally {
     client.release();
   }
-
 };
 
+export const importCases = async (cases: CaseInput[]) => {
+  const client = await pool.connect();
+  try {
+    for (const _case of cases) await _addCase(_case, client);
+    await client.query('COMMIT');
+    return cases.length;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
+const _addCase = async (_case: CaseInput, client: PoolClient) => {
+  if (_case.predictions.length === 0) throw Error('Case must have at least 1 prediction');
+  const insertCaseColumns = ['"reference"', '"creator"', '"group"', '"deadline"'];
+  const insertCasePlaceholders = ["$1", "$2", "$3", "$4"];
+  const insertCaseValues = [
+    _case.reference.trim(),
+    _case.creatorId,
+    _case.groupId || null,
+    _case.deadline,
+  ];
+  if (_case.created) {
+    insertCaseColumns.push('"timestamp"');
+    insertCasePlaceholders.push("$5");
+    insertCaseValues.push(_case.created);
+  }
+  const insertCaseText = `INSERT INTO "case" (${insertCaseColumns.join(', ')}) VALUES (${insertCasePlaceholders.join(', ')}) RETURNING "id"`;
+  const insertCaseRes = await client.query(insertCaseText, insertCaseValues);
+  for (const prediction of _case.predictions) {
+    const insertDiagnosisRes = await client.query(insertDiagnosisText + ' RETURNING "id"', [
+      prediction.diagnosis.trim(),
+      insertCaseRes.rows[0].id,
+    ]);
+    await client.query('INSERT INTO "wager" ("creator", "confidence", "diagnosis", "timestamp") VALUES($1, $2, $3, $4)', [
+      _case.creatorId,
+      prediction.confidence,
+      insertDiagnosisRes.rows[0].id,
+      _case.created,
+    ]);
+    if (prediction.outcome) {
+      await client.query('INSERT INTO "judgement" ("diagnosisId", "judgedBy", "outcome", "timestamp") VALUES($1, $2, $3, $4)', [
+        insertDiagnosisRes.rows[0].id,
+        _case.creatorId,
+        prediction.outcome,
+        _case.created,
+      ]);
+    }
+  }
+  for (const comment of _case.comments) {
+    await client.query('INSERT INTO "comment" ("creator", "case", "text", "timestamp") VALUES($1, $2, $3, $4)', [
+      _case.creatorId,
+      insertCaseRes.rows[0].id,
+      comment.text.trim(),
+      comment.timestamp,
+    ])
+  }
+  return insertCaseRes.rows[0].id;
+};
 
 export const addDiagnosis = async (userId: string, caseId: string, prediction: PredictionInput) => {
   const client = await pool.connect();
