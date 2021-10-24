@@ -93,6 +93,12 @@ export const getCommentsForCase = (caseId: string) => pool
   ])
   .then(result => result.rows);
 
+export const getTags = (caseId: string) => pool
+  .query('SELECT "text" FROM "tag" WHERE "case"=$1 ORDER BY "text"', [
+    caseId,
+  ])
+  .then(result => result.rows.map(row => row.text));
+
 // Mutation
 
 export const addUser = (name: string) => pool

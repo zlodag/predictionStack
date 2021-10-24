@@ -73,6 +73,7 @@ const resolvers : Resolvers = {
     group: _case => _case.groupId ? connectors.getGroup(_case.groupId) : null,
     diagnoses: _case => connectors.getDiagnosesForCase(_case.id),
     comments: _case => connectors.getCommentsForCase(_case.id),
+    tags: _case => connectors.getTags(_case.id),
   },
 
   Diagnosis: {

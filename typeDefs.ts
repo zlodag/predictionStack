@@ -75,6 +75,7 @@ export const typeDefs = gql`
       deadline: Timestamp!
       diagnoses: [Diagnosis!]!
       comments: [Comment!]!
+      tags: [String!]!
   }
   type Diagnosis {
       id: ID!
