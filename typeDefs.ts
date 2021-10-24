@@ -152,6 +152,13 @@ export const typeDefs = gql`
       caseReference: String!
       timestamp: Timestamp!
   }
+  type Prediction {
+      caseId: ID!
+      caseReference: String!
+      diagnosis: String!
+      outcome: Outcome
+      timestamp: Timestamp!
+  }
   type Query {
     users: [User!]!
     user (id: ID!): User!
@@ -159,6 +166,7 @@ export const typeDefs = gql`
     group (id: ID!): Group!
     case (id: ID!): Case!
     events (userId: ID!, limit: Int = 10): [Event!]!
+    predictions (creatorId: ID!, outcome: Outcome): [Prediction!]!
   }
   
   type Mutation {

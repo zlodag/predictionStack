@@ -13,6 +13,7 @@ const resolvers : Resolvers = {
     group: (_, {id}) => connectors.getGroup(id),
     'case': (_, {id}) => connectors.getCase(id),
     events: (_, {userId, limit}) => connectors.getEvents(userId, limit),
+    predictions: (_, {creatorId, outcome}) => connectors.getPredictions(creatorId, outcome),
   },
 
   Mutation: {
@@ -56,6 +57,10 @@ const resolvers : Resolvers = {
   },
   Score: {
     outcome: score => score.outcome,
+  },
+
+  Prediction: {
+    outcome: prediction => prediction.outcome || null,
   },
 
   Group: {

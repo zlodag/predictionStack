@@ -1,5 +1,5 @@
 import {Pool, PoolClient} from 'pg';
-import {CaseInput, Outcome, PredictionInput, Scalars} from '../generated/graphql';
+import {CaseInput, Maybe, Outcome, PredictionInput, Scalars} from '../generated/graphql';
 
 const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2)';
 const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
@@ -265,6 +265,36 @@ export const getScore = (userId: string, adjusted: boolean) => pool
     userId,
   ]})
   .then(result => result.rows[0].score);
+
+export const getPredictions = (creatorId: string, outcome?: Maybe<Outcome>) => {
+  let where = '';
+  let params = [creatorId];
+  if (outcome !== undefined) {
+    where += ' AND "judgement"."outcome" ';
+    if (outcome === null) {
+      where += 'IS NULL';
+    } else {
+      params.push(outcome);
+      where += ` = $${params.length}`;
+    }
+  }
+  return pool
+    .query(`
+        SELECT "case"."id" as "caseId",
+               "case"."reference" as "caseReference",
+               "diagnosis"."name" as "diagnosis",
+               "judgement"."outcome",
+               "wager"."timestamp"
+        FROM "case"
+                 INNER JOIN "diagnosis" ON "diagnosis"."case" = "case"."id"
+                 INNER JOIN "wager" ON "wager"."diagnosis" = "diagnosis"."id"
+                 LEFT JOIN "judgement" ON "diagnosis"."id" = "judgement"."diagnosisId"
+        WHERE "wager"."creator" = $1
+        ${where}
+        ORDER BY "wager"."timestamp" DESC
+    `, params)
+    .then(result => result.rows);
+}
 
 
 export const getScores = (userId: string) => pool
