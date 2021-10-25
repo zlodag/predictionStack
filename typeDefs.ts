@@ -36,6 +36,7 @@ export const typeDefs = gql`
       created: Timestamp!
       score (adjusted: Boolean!): Float
       scores: [Score!]!
+      tags: [String!]!
   }
   type Group implements NamedNode {
       id: ID!
@@ -168,6 +169,7 @@ export const typeDefs = gql`
     case (id: ID!): Case!
     events (userId: ID!, limit: Int = 10): [Event!]!
     predictions (creatorId: ID!, outcome: Outcome): [Prediction!]!
+    cases (userId: ID!, tag: String!): [Case!]!
   }
   
   type Mutation {

@@ -75,6 +75,13 @@ export const getCasesForGroup = (groupId: string) => pool
   ])
   .then(result => result.rows);
 
+export const getCasesForTag = (userId: string, tag: string) => pool
+  .query('SELECT DISTINCT "case"."id", "case"."reference", "case"."creator" AS "creatorId", "case"."group" AS "groupId", "case"."deadline" FROM "case" LEFT JOIN "user_group" ON "case"."group" = "user_group"."group" INNER JOIN "tag" ON "tag"."case" = "case"."id" WHERE $1 IN ("case"."creator", "user_group"."user") AND "tag"."text" = $2 ORDER BY "deadline"', [
+    userId,
+    tag,
+  ])
+  .then(result => result.rows);
+
 export const getDiagnosesForCase = (caseId: string) => pool
   .query('SELECT "id", "name" FROM "diagnosis" WHERE "case"=$1 ORDER BY "pk"', [
     caseId,
@@ -93,9 +100,15 @@ export const getCommentsForCase = (caseId: string) => pool
   ])
   .then(result => result.rows);
 
-export const getTags = (caseId: string) => pool
+export const getTagsForCase = (caseId: string) => pool
   .query('SELECT "text" FROM "tag" WHERE "case"=$1 ORDER BY "text"', [
     caseId,
+  ])
+  .then(result => result.rows.map(row => row.text));
+
+export const getTagsForUser = (userId: string) => pool
+  .query('SELECT DISTINCT "tag"."text" FROM "case" LEFT JOIN "user_group" ON "case"."group" = "user_group"."group" INNER JOIN "tag" ON "tag"."case" = "case"."id" WHERE $1 IN ("case"."creator", "user_group"."user") ORDER BY "text"', [
+    userId,
   ])
   .then(result => result.rows.map(row => row.text));
 
