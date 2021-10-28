@@ -8,6 +8,15 @@ const pool = new Pool({
   database: 'predictions',
 });
 
+// Auth
+
+export const login = (username: string, password: string) => pool
+  .query('SELECT "id", "name" FROM "user" WHERE "name" = $1 AND "password" = crypt($2, "password")', [
+    username.trim().toLowerCase(),
+    password,
+  ])
+  .then(result => result.rows.length ? result.rows[0] : null);
+
 // Query
 
 export const getUsers = () => pool
@@ -63,17 +72,25 @@ export const getGroupsForUser = (userId: string) => pool
   ])
   .then(result => result.rows);
 
-export const getCasesForUser = (userId: string) => pool
+export const getCasesForCreator = (creatorId: string) => pool
   .query('SELECT "id", "reference", "creator" AS "creatorId", "group" AS "groupId", "deadline" FROM "case" WHERE "creator"=$1 ORDER BY "deadline"', [
+    creatorId,
+  ])
+  .then(result => result.rows);
+
+export const getCasesForUser = (userId: string) => pool
+  .query('SELECT DISTINCT "case"."id", "case"."reference", "case"."creator" AS "creatorId", "case"."group" AS "groupId", "case"."deadline" FROM "case" LEFT JOIN "user_group" ON "case"."group" = "user_group"."group" WHERE $1 IN ("case"."creator", "user_group"."user") ORDER BY "deadline"', [
     userId,
   ])
   .then(result => result.rows);
+
 
 export const getCasesForGroup = (groupId: string) => pool
   .query('SELECT "id", "reference", "creator" AS "creatorId", "group" AS "groupId", "deadline" FROM "case" WHERE "group"=$1 ORDER BY "deadline"', [
     groupId,
   ])
   .then(result => result.rows);
+
 
 export const getCasesForTag = (userId: string, tag: string) => pool
   .query('SELECT DISTINCT "case"."id", "case"."reference", "case"."creator" AS "creatorId", "case"."group" AS "groupId", "case"."deadline" FROM "case" LEFT JOIN "user_group" ON "case"."group" = "user_group"."group" INNER JOIN "tag" ON "tag"."case" = "case"."id" WHERE $1 IN ("case"."creator", "user_group"."user") AND "tag"."text" = $2 ORDER BY "deadline"', [
@@ -114,9 +131,10 @@ export const getTagsForUser = (userId: string) => pool
 
 // Mutation
 
-export const addUser = (name: string) => pool
-  .query('INSERT INTO "user" ("name") VALUES ($1) RETURNING "id", "name", "created"', [
-    name,
+export const addUser = (username: string, password: string) => pool
+  .query(`INSERT INTO "user" ("name", "password") VALUES ($1, crypt($2, gen_salt('bf', 8))) RETURNING "id", "name", "created"`, [
+    username.trim().toLowerCase(),
+    password,
   ])
   .then(result => result.rows[0]);
 

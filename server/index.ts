@@ -2,12 +2,15 @@ import express from 'express';
 import {graphqlHTTP} from 'express-graphql';
 import {schema} from './schema';
 import path from 'path';
+import * as auth from './auth';
 
 const app = express();
 
 const port = 3000;
 
 const mockData = require("./my_predictions.json");
+
+app.use('/auth', auth.router);
 
 app.use('/graphql', graphqlHTTP({
   schema,

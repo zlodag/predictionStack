@@ -32,7 +32,7 @@ export const typeDefs = gql`
       id: ID!
       name: String!
       groups: [Group!]!
-      cases: [Case!]!
+      casesCreated: [Case!]!
       created: Timestamp!
       score (adjusted: Boolean!): Float
       scores: [Score!]!
@@ -169,12 +169,13 @@ export const typeDefs = gql`
     case (id: ID!): Case!
     events (userId: ID!, limit: Int = 10): [Event!]!
     predictions (creatorId: ID!, outcome: Outcome): [Prediction!]!
-    cases (userId: ID!, tag: String!): [Case!]!
+    cases (userId: ID!, tag: String): [Case!]!
   }
   
   type Mutation {
     addUser (
-        name: String!
+        username: String!
+        password: String!
     ): User!
     addUserToGroup(
         user: ID!

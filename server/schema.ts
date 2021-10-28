@@ -14,11 +14,11 @@ const resolvers : Resolvers = {
     'case': (_, {id}) => connectors.getCase(id),
     events: (_, {userId, limit}) => connectors.getEvents(userId, limit),
     predictions: (_, {creatorId, outcome}) => connectors.getPredictions(creatorId, outcome),
-    cases: (_, {userId, tag}) => connectors.getCasesForTag(userId, tag),
+    cases: (_, {userId, tag}) => tag ? connectors.getCasesForTag(userId, tag) : connectors.getCasesForUser(userId),
   },
 
   Mutation: {
-    addUser: (_, {name}) => connectors.addUser(name),
+    addUser: (_, {username, password}) => connectors.addUser(username, password),
     addUserToGroup: (_, {user, group}) => connectors.addUserToGroup(user, group),
     addCase: (_, {caseInput}) => connectors.addCase(caseInput),
     addComment: (_, {creatorId, caseId, text}) => connectors.addComment(creatorId, caseId, text),
@@ -35,7 +35,7 @@ const resolvers : Resolvers = {
 
   User: {
     groups: user => connectors.getGroupsForUser(user.id),
-    cases: user => connectors.getCasesForUser(user.id),
+    casesCreated: user => connectors.getCasesForCreator(user.id),
     score: (user, {adjusted}) => connectors.getScore(user.id, adjusted),
     scores: user => connectors.getScores(user.id),
     tags: user => connectors.getTagsForUser(user.id),
