@@ -1,8 +1,14 @@
 import {Pool, PoolClient} from 'pg';
 import {CaseInput, Maybe, Outcome, PredictionInput, Scalars} from '../generated/graphql';
+import {User} from './User';
 
-const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES ($1, $2)';
+const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES (trim($1), $2)';
 const insertWagerText = 'INSERT INTO "wager" ("creator", "confidence", "diagnosis") VALUES($1, $2, $3)';
+
+const unauthorized = (user: User | null) => {
+  console.log(user);
+  throw Error((user ? `${user.name} (${user.id})` : 'Anonymous user') + ' is not authorized to perform that action');
+}
 
 const pool = new Pool({
   database: 'predictions',
@@ -10,12 +16,26 @@ const pool = new Pool({
 
 // Auth
 
-export const login = (username: string, password: string) => pool
-  .query('SELECT "id", "name" FROM "user" WHERE "name" = $1 AND "password" = crypt($2, "password")', [
-    username.trim().toLowerCase(),
+export const login = (username: string, password: string) : Promise<User|null> => {
+  const queryText = 'SELECT "id", "name" FROM "user" WHERE "name" = lower(trim($1)) AND "password" = crypt($2, "password")';
+  const values = [
+    username,
     password,
-  ])
-  .then(result => result.rows.length ? result.rows[0] : null);
+  ];
+  console.log(queryText, values);
+  return pool
+    .query(queryText, values)
+    .then(result => result.rows.length ? result.rows[0] : null);
+};
+
+
+export const checkUserIsOwnerOrMemberOfGroupForCase = (user: User | null, caseId: string) =>
+  pool.query('SELECT "case"."id" FROM "case" LEFT JOIN "user_group" USING ("group") WHERE "case"."id"=$1 AND $2 IN ("case"."creator", "user_group"."user")', [
+    caseId,
+    user?.id,
+  ]).then(result => {
+    if (!result.rows.length) unauthorized(user);
+  });
 
 // Query
 
@@ -132,8 +152,8 @@ export const getTagsForUser = (userId: string) => pool
 // Mutation
 
 export const addUser = (username: string, password: string) => pool
-  .query(`INSERT INTO "user" ("name", "password") VALUES ($1, crypt($2, gen_salt('bf', 8))) RETURNING "id", "name", "created"`, [
-    username.trim().toLowerCase(),
+  .query(`INSERT INTO "user" ("name", "password") VALUES (lower(trim($1)), crypt($2, gen_salt('bf', 8))) RETURNING "id", "name", "created"`, [
+    username,
     password,
   ])
   .then(result => result.rows[0]);
@@ -176,9 +196,9 @@ export const importCases = async (cases: CaseInput[]) => {
 const _addCase = async (_case: CaseInput, client: PoolClient) => {
   if (_case.predictions.length === 0) throw Error('Case must have at least 1 prediction');
   const insertCaseColumns = ['"reference"', '"creator"', '"group"', '"deadline"'];
-  const insertCasePlaceholders = ["$1", "$2", "$3", "$4"];
+  const insertCasePlaceholders = ["trim($1)", "$2", "$3", "$4"];
   const insertCaseValues = [
-    _case.reference.trim(),
+    _case.reference,
     _case.creatorId,
     _case.groupId || null,
     _case.deadline,
@@ -189,18 +209,26 @@ const _addCase = async (_case: CaseInput, client: PoolClient) => {
     insertCaseValues.push(_case.created);
   }
   const insertCaseText = `INSERT INTO "case" (${insertCaseColumns.join(', ')}) VALUES (${insertCasePlaceholders.join(', ')}) RETURNING "id"`;
+  console.log(insertCaseText, insertCaseValues);
   const insertCaseRes = await client.query(insertCaseText, insertCaseValues);
   for (const prediction of _case.predictions) {
     const insertDiagnosisRes = await client.query(insertDiagnosisText + ' RETURNING "id"', [
-      prediction.diagnosis.trim(),
+      prediction.diagnosis,
       insertCaseRes.rows[0].id,
     ]);
-    await client.query('INSERT INTO "wager" ("creator", "confidence", "diagnosis", "timestamp") VALUES($1, $2, $3, $4)', [
+    const insertWagerColumns = ['"creator"', '"confidence"', '"diagnosis"'];
+    const insertWagerPlaceholders = ["$1", "$2", "$3"];
+    const insertWagerValues = [
       _case.creatorId,
       prediction.confidence,
       insertDiagnosisRes.rows[0].id,
-      _case.created,
-    ]);
+    ];
+    if (_case.created) {
+      insertWagerColumns.push('"timestamp"');
+      insertWagerPlaceholders.push("$4");
+      insertWagerValues.push(_case.created);
+    }
+    await client.query(`INSERT INTO "wager" (${insertWagerColumns}) VALUES(${insertWagerPlaceholders.join(', ')})`, insertWagerValues);
     if (prediction.outcome) {
       await client.query('INSERT INTO "judgement" ("diagnosisId", "judgedBy", "outcome", "timestamp") VALUES($1, $2, $3, $4)', [
         insertDiagnosisRes.rows[0].id,
@@ -211,10 +239,10 @@ const _addCase = async (_case: CaseInput, client: PoolClient) => {
     }
   }
   for (const comment of _case.comments) {
-    await client.query('INSERT INTO "comment" ("creator", "case", "text", "timestamp") VALUES($1, $2, $3, $4)', [
+    await client.query('INSERT INTO "comment" ("creator", "case", "text", "timestamp") VALUES($1, $2, trim($3), $4)', [
       _case.creatorId,
       insertCaseRes.rows[0].id,
-      comment.text.trim(),
+      comment.text,
       comment.timestamp,
     ])
   }
@@ -226,7 +254,7 @@ export const addDiagnosis = async (userId: string, caseId: string, prediction: P
   try {
     await client.query('BEGIN');
     const insertDiagnosisRes = await client.query(insertDiagnosisText + ' RETURNING "id", "name"', [
-      prediction.diagnosis.trim(),
+      prediction.diagnosis,
       caseId,
     ]);
     await client.query(insertWagerText, [
@@ -247,10 +275,10 @@ export const addDiagnosis = async (userId: string, caseId: string, prediction: P
 
 
 export const addComment = (userId: string, caseId: string, text: string) => pool
-  .query('INSERT INTO "comment" ("creator", "case", "text") VALUES($1, $2, $3) RETURNING "creator" as "creatorId", "timestamp", "text"', [
+  .query('INSERT INTO "comment" ("creator", "case", "text") VALUES($1, $2, trim($3)) RETURNING "creator" as "creatorId", "timestamp", "text"', [
     userId,
     caseId,
-    text.trim(),
+    text,
   ])
   .then(result => result.rows[0]);
 
@@ -262,12 +290,15 @@ export const addWager = (userId: string, diagnosisId: string, confidence: number
   ])
   .then(result => result.rows[0]);
 
-export const changeGroup = (caseId: string, newGroupId: string | null) => pool
-  .query('WITH "newGroup" AS (UPDATE "case" SET "group" = $1 WHERE "id" = $2 RETURNING "group" as "id") SELECT "id", "name" FROM "newGroup" JOIN "group" USING ("id")', [
+
+export const changeGroup = (caseId: string, newGroupId?: string | null, user?: User) => {
+  if (newGroupId === undefined) throw Error ("newGroupId cannot be undefined");
+  return pool.query('WITH "newGroup" AS (UPDATE "case" SET "group" = $1 WHERE "id" = $2 RETURNING "group" as "id") SELECT "id", "name" FROM "newGroup" JOIN "group" USING ("id")', [
     newGroupId,
     caseId,
   ])
   .then(result => result.rows.length ? result.rows[0] : null);
+};
 
 export const changeDeadline = (caseId: string, newDeadline: Scalars["Timestamp"]) => pool
   .query('UPDATE "case" SET "deadline" = $1 WHERE "id" = $2 RETURNING "deadline"', [

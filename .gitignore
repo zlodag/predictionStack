@@ -3,4 +3,4 @@ node_modules/
 *.sublime-*
 .idea
 generated/
-server/my_predictions.json
+.env

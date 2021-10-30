@@ -4,7 +4,7 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "start": "ts-node-dev --project tsconfig.json server/index.ts",
+    "start": "ts-node-dev --project tsconfig.json --require dotenv/config server/index.ts",
     "prestart": "npm run codegen",
     "build": "tsc --project ./",
     "codegen": "graphql-codegen --config codegen.yml"
@@ -15,13 +15,15 @@
     "@graphql-tools/schema": "^8.0.1",
     "@types/jsonwebtoken": "^8.5.5",
     "body-parser": "^1.19.0",
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "express-graphql": "^0.12.0",
     "graphql": "^15.5.1",
     "graphql-scalars": "^1.10.0",
     "graphql-tag": "^2.12.5",
     "jsonwebtoken": "^8.5.1",
-    "pg": "^8.7.1"
+    "pg": "^8.7.1",
+    "pug": "^3.0.2"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^2.2.1",

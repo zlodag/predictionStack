@@ -2,16 +2,17 @@ import {GraphQLTimestamp} from 'graphql-scalars';
 import {makeExecutableSchema} from '@graphql-tools/schema';
 import {typeDefs} from '../typeDefs';
 import {Resolvers} from '../generated/graphql';
+import {User} from './User';
 
 import * as connectors from './connectors';
 
-const resolvers : Resolvers = {
+const resolvers : Resolvers<User|undefined> = {
   Query: {
     users: connectors.getUsers,
     user: (_, {id}) => connectors.getUser(id),
     groups: (_, {userId}) => userId ? connectors.getGroupsForUser(userId) : connectors.getGroups(),
     group: (_, {id}) => connectors.getGroup(id),
-    'case': (_, {id}) => connectors.getCase(id),
+    'case': (_, {id}, user) => connectors.checkUserIsOwnerOrMemberOfGroupForCase(user || null, id).then(() => connectors.getCase(id)),
     events: (_, {userId, limit}) => connectors.getEvents(userId, limit),
     predictions: (_, {creatorId, outcome}) => connectors.getPredictions(creatorId, outcome),
     cases: (_, {userId, tag}) => tag ? connectors.getCasesForTag(userId, tag) : connectors.getCasesForUser(userId),
@@ -24,10 +25,7 @@ const resolvers : Resolvers = {
     addComment: (_, {creatorId, caseId, text}) => connectors.addComment(creatorId, caseId, text),
     addDiagnosis: (_, {creatorId, caseId, prediction}) => connectors.addDiagnosis(creatorId, caseId, prediction),
     addWager: (_, {creatorId, diagnosisId, confidence}) => connectors.addWager(creatorId, diagnosisId, confidence),
-    changeGroup: (_, {caseId, newGroupId}) => {
-      if (newGroupId === undefined) throw Error ("newGroupId cannot be undefined")
-      return connectors.changeGroup(caseId, newGroupId)
-    },
+    changeGroup: (_, {caseId, newGroupId}, user) => connectors.changeGroup(caseId, newGroupId, user),
     changeDeadline: (_, {caseId, newDeadline}) => connectors.changeDeadline(caseId, newDeadline),
     judgeOutcome: (_, {diagnosisId, judgedById, outcome}) => connectors.judgeOutcome(diagnosisId, judgedById, outcome),
     importCases: (_, {cases}) => connectors.importCases(cases),

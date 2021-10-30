@@ -1,34 +1,24 @@
 import express from 'express';
 import {login} from './connectors';
 import jwt from 'jsonwebtoken';
-import bodyParser from 'body-parser';
 
 export const router = express.Router();
-router.use(bodyParser.json());
 
 router.post("/login", async (req, res) => {
   const body = req.body;
-
-  if (!(body.username && body.password)) {
-    return res.status(400).send({ error: "Data not formatted properly" });
-  }
-
-  // createing a new mongoose doc from user data
-  const user = await login(body.username, body.password);
-
-  if (user) {
-    const token = jwt.sign(
-      user,
-      'secret',
-      {
+  if (process.env.SECRET === undefined) {
+    res.sendStatus(500);
+  } else if (body.username && body.password) {
+    const user = await login(body.username, body.password);
+    if (user) {
+      const token = jwt.sign(user, process.env.SECRET, {
         expiresIn: "2h",
-      }
-    );
-
-    // save user token
-    user.token = token;
-    res.status(200).json(user);
+      });
+      res.status(200).json({user, token});
+    } else {
+      res.status(400).send({error: "Invalid credentials"});
+    }
   } else {
-    res.status(400).send({ error: "Invalid credentials"});
+    res.status(400).send({error: "Data not formatted properly"});
   }
 });
