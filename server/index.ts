@@ -13,7 +13,6 @@ const app = express();
 app.set('view engine', 'pug')
 app.use(express.static(path.join(__dirname, '/../public')))
 app.use(bodyParser.json());
-
 app.use('/api', (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (process.env.SECRET === undefined) {
@@ -23,7 +22,6 @@ app.use('/api', (req, res, next) => {
 
     jwt.verify(token, process.env.SECRET, (err, decoded) => {
       if (err) {
-        res.sendStatus(403);
         res.status(403).send({error: err.message});
       } else if (decoded) {
         const user: User = {id: decoded.id, name: decoded.name};
@@ -33,7 +31,8 @@ app.use('/api', (req, res, next) => {
       }
     });
   } else {
-    res.status(401).send({error: 'Unauthorized'});
+    next();
+    // res.status(401).send({error: 'Unauthorized'});
   }
 }, graphqlHTTP(req => ({
   schema,

@@ -6,37 +6,62 @@ import {User} from './User';
 
 import * as connectors from './connectors';
 
-const resolvers : Resolvers<User|undefined> = {
+function restrictToCurrentUser(currentUser: any, requestedUser: any) {
+  if (currentUser.id !== requestedUser.id) {
+    throw Error(`${currentUser.name} (${currentUser.id}) tried to request ${requestedUser.name} (${requestedUser.id})`);
+  }
+}
+
+const resolvers : Resolvers<User> = {
   Query: {
-    users: connectors.getUsers,
+    // users: connectors.getUsers,
     user: (_, {id}) => connectors.getUser(id),
-    groups: (_, {userId}) => userId ? connectors.getGroupsForUser(userId) : connectors.getGroups(),
     group: (_, {id}) => connectors.getGroup(id),
-    'case': (_, {id}, user) => connectors.checkUserIsOwnerOrMemberOfGroupForCase(user || null, id).then(() => connectors.getCase(id)),
-    events: (_, {userId, limit}) => connectors.getEvents(userId, limit),
-    predictions: (_, {creatorId, outcome}) => connectors.getPredictions(creatorId, outcome),
-    cases: (_, {userId, tag}) => tag ? connectors.getCasesForTag(userId, tag) : connectors.getCasesForUser(userId),
+    'case': (_, {id}, user) => connectors.checkUserIsOwnerOrMemberOfGroupForCase(user, id).then(() => connectors.getCase(id)),
   },
 
   Mutation: {
     addUser: (_, {username, password}) => connectors.addUser(username, password),
     addUserToGroup: (_, {user, group}) => connectors.addUserToGroup(user, group),
-    addCase: (_, {caseInput}) => connectors.addCase(caseInput),
-    addComment: (_, {creatorId, caseId, text}) => connectors.addComment(creatorId, caseId, text),
-    addDiagnosis: (_, {creatorId, caseId, prediction}) => connectors.addDiagnosis(creatorId, caseId, prediction),
-    addWager: (_, {creatorId, diagnosisId, confidence}) => connectors.addWager(creatorId, diagnosisId, confidence),
-    changeGroup: (_, {caseId, newGroupId}, user) => connectors.changeGroup(caseId, newGroupId, user),
+    addCase: (_, {caseInput}, currentUser) => connectors.addCase(currentUser.id, caseInput),
+    addComment: (_, {caseId, text}, currentUser) => connectors.addComment(currentUser.id, caseId, text),
+    addDiagnosis: (_, {caseId, prediction}, currentUser) => connectors.addDiagnosis(currentUser.id, caseId, prediction),
+    addWager: (_, {diagnosisId, confidence}, currentUser) => connectors.addWager(currentUser.id, diagnosisId, confidence),
+    changeGroup: (_, {caseId, newGroupId}, currentUser) => connectors.changeGroup(caseId, newGroupId, currentUser),
     changeDeadline: (_, {caseId, newDeadline}) => connectors.changeDeadline(caseId, newDeadline),
-    judgeOutcome: (_, {diagnosisId, judgedById, outcome}) => connectors.judgeOutcome(diagnosisId, judgedById, outcome),
-    importCases: (_, {cases}) => connectors.importCases(cases),
+    judgeOutcome: (_, {diagnosisId, outcome}, currentUser) => connectors.judgeOutcome(diagnosisId, currentUser.id, outcome),
+    importCases: (_, {cases}, currentUser) => connectors.importCases(currentUser.id, cases),
   },
 
   User: {
-    groups: user => connectors.getGroupsForUser(user.id),
-    casesCreated: user => connectors.getCasesForCreator(user.id),
-    score: (user, {adjusted}) => connectors.getScore(user.id, adjusted),
-    scores: user => connectors.getScores(user.id),
-    tags: user => connectors.getTagsForUser(user.id),
+    groups: (user, _, currentUser) => {
+      restrictToCurrentUser(currentUser, user);
+      return connectors.getGroupsForUser(user.id);
+    },
+    score: (user, {adjusted}, currentUser) => {
+      restrictToCurrentUser(currentUser, user);
+      return connectors.getScore(user.id, adjusted);
+    },
+    scores: (user, _, currentUser) => {
+      restrictToCurrentUser(currentUser, user);
+      return connectors.getScores(user.id);
+    },
+    tags: (user, _, currentUser) => {
+      restrictToCurrentUser(currentUser, user);
+      return connectors.getTagsForUser(user.id);
+    },
+    events: (user, {limit}, currentUser) => {
+      restrictToCurrentUser(currentUser, user);
+      return connectors.getEvents(user.id, limit);
+    },
+    predictions: (user, {outcome}, currentUser) => {
+      restrictToCurrentUser(currentUser, user);
+      return connectors.getPredictions(user.id, outcome);
+    },
+    cases: (user, args, currentUser) => {
+      restrictToCurrentUser(currentUser, user);
+      return connectors.getCasesForUser(user.id, args);
+    },
   },
 
   Event: {

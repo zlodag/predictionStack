@@ -3,11 +3,8 @@
 import gql from 'graphql-tag';
 
 export const typeDefs = gql`
-  # An object with a Globally Unique ID and a name
   interface NamedNode {
-      # The ID of the object.
       id: ID!
-      # The name of the object.
       name: String!
   }
   interface Event {
@@ -31,12 +28,14 @@ export const typeDefs = gql`
   type User implements NamedNode {
       id: ID!
       name: String!
-      groups: [Group!]!
-      casesCreated: [Case!]!
       created: Timestamp!
+      groups: [Group!]!
+      cases (creator: Boolean, tag: String): [Case!]!
+      predictions (outcome: Outcome): [Prediction!]!
       score (adjusted: Boolean!): Float
       scores: [Score!]!
       tags: [String!]!
+      events (limit: Int = 10): [Event!]!
   }
   type Group implements NamedNode {
       id: ID!
@@ -50,22 +49,32 @@ export const typeDefs = gql`
   }
   input CaseInput {
       reference: String!
-      created: Timestamp
-      creatorId: ID!
       groupId: ID
       deadline: Timestamp!
       predictions: [PredictionInput!]!
-      comments: [CommentInput!]!
-  }
-  input CommentInput {
-      text: String!
-      timestamp: Timestamp
   }
   input PredictionInput {
       diagnosis: String!
       confidence: Int!
+  }
+  input ImportedCaseInput {
+      reference: String!
+      created: Timestamp!
+      groupId: ID
+      deadline: Timestamp!
+      predictions: [ImportedPredictionInput!]!
+      comments: [ImportedCommentInput!]!
+  }
+  input ImportedPredictionInput {
+      diagnosis: String!
+      confidence: Int!
       outcome: Outcome
   }
+  input ImportedCommentInput {
+      text: String!
+      timestamp: Timestamp!
+  }
+
   type Case {
       id: ID!
       reference: String!
@@ -162,14 +171,9 @@ export const typeDefs = gql`
       timestamp: Timestamp!
   }
   type Query {
-    users: [User!]!
     user (id: ID!): User!
-    groups (userId: ID): [Group!]!
     group (id: ID!): Group!
     case (id: ID!): Case!
-    events (userId: ID!, limit: Int = 10): [Event!]!
-    predictions (creatorId: ID!, outcome: Outcome): [Prediction!]!
-    cases (userId: ID!, tag: String): [Case!]!
   }
   
   type Mutation {
@@ -185,17 +189,14 @@ export const typeDefs = gql`
         caseInput: CaseInput!
     ): ID!
     addComment(
-        creatorId: ID!
         caseId: ID!
         text: String!
     ): Comment!
     addDiagnosis(
-        creatorId: ID!
         caseId: ID!
         prediction: PredictionInput!
     ): Diagnosis!
     addWager(
-        creatorId: ID!
         diagnosisId: ID!
         confidence: Int!
     ): Wager!
@@ -209,11 +210,10 @@ export const typeDefs = gql`
     ): Timestamp!
     judgeOutcome(
         diagnosisId: ID!
-        judgedById: ID!
         outcome: Outcome!
     ) : Judgement!
     importCases(
-        cases: [CaseInput!]!
+        cases: [ImportedCaseInput!]!
     ): Int!
   }
 `;
