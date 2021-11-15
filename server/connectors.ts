@@ -392,7 +392,8 @@ export const getScores = (userId: string) => pool
   .query({name: 'get-scores', text: `
       WITH "data" AS (
         SELECT
-          "judgement"."timestamp",
+          "wager"."timestamp" as "wagered",
+          "judgement"."timestamp" as "judged",
           "judgement"."diagnosisId",
           "wager"."confidence",
           "judgement"."outcome",
@@ -403,7 +404,8 @@ export const getScores = (userId: string) => pool
         WHERE "wager"."creator" = $1 AND "judgement"."outcome" <> 'INDETERMINATE'
       )
       SELECT
-        "data"."timestamp" AS "judged",
+        "data"."wagered",
+        "data"."judged",
         "case"."id" AS "caseId",
         "case"."reference",
         "diagnosis"."name" AS "diagnosis",
@@ -417,7 +419,7 @@ export const getScores = (userId: string) => pool
         INNER JOIN "diagnosis" ON "data"."diagnosisId" = "diagnosis"."id"
         INNER JOIN "case" ON "diagnosis"."case" = "case"."id"
       WINDOW
-        "w" AS (ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+        "w" AS (ORDER BY "data"."wagered" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
     `, values: [
       userId,
     ]})

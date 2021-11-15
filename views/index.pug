@@ -8,5 +8,4 @@ html(lang="en")
     div#app
     script(type='text/javascript').
       const app = Elm.Main.init({node: document.getElementById('app')});
-      //- const app = Elm.Main.init({node: document.getElementById('app')});
-      //- app.ports.decrypt.subscribe(data => aesGcmDecrypt(data).then(app.ports.decryptReceiver.send));
+      app.ports.decrypt.subscribe(ciphers => aesGcmDecrypt(ciphers).then(app.ports.decryptReceiver.send));

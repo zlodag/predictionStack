@@ -113,6 +113,7 @@ export const typeDefs = gql`
       text: String!
   }
   type Score {
+      wagered: Timestamp!
       judged: Timestamp!
       caseId: ID!
       reference: String!
