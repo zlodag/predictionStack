@@ -18,6 +18,7 @@ const resolvers : Resolvers<User> = {
     user: (_, {id}) => connectors.getUser(id),
     group: (_, {id}) => connectors.getGroup(id),
     'case': (_, {id}, user) => connectors.checkUserIsOwnerOrMemberOfGroupForCase(user, id).then(() => connectors.getCase(id)),
+    specialties: () => connectors.getSpecialties(),
   },
 
   Mutation: {
@@ -61,6 +62,10 @@ const resolvers : Resolvers<User> = {
     cases: (user, args, currentUser) => {
       restrictToCurrentUser(currentUser, user);
       return connectors.getCasesForUser(user.id, args);
+    },
+    library: (user, args, currentUser) => {
+      restrictToCurrentUser(currentUser, user);
+      return connectors.getLibraryForUser(user.id, args);
     },
   },
 
@@ -117,6 +122,11 @@ const resolvers : Resolvers<User> = {
 
   Comment: {
     creator: comment => connectors.getUser(comment.creatorId),
+  },
+
+  LibraryCase : {
+    creator: libraryCase => connectors.getUser(libraryCase.creatorId),
+    specialties: libraryCase => connectors.getSpecialtiesForLibraryCase(libraryCase.id),
   },
 
   Timestamp: GraphQLTimestamp

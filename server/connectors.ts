@@ -1,5 +1,5 @@
 import {Pool, PoolClient} from 'pg';
-import {CaseInput, ImportedCaseInput, Maybe, Outcome, PredictionInput, Scalars, UserCasesArgs} from '../generated/graphql';
+import {CaseInput, ImportedCaseInput, Maybe, Outcome, PredictionInput, Scalars, UserCasesArgs, UserLibraryArgs} from '../generated/graphql';
 import {User} from './User';
 
 const insertDiagnosisText = 'INSERT INTO "diagnosis" ("name", "case") VALUES (trim($1), $2)';
@@ -171,6 +171,36 @@ export const getTagsForUser = (userId: string) => pool
     userId,
   ])
   .then(result => result.rows.map(row => row.text));
+
+export const getLibraryForUser = (userId: string, args: UserLibraryArgs ) =>
+  pool.query(`
+    SELECT DISTINCT "library"."id", "created", "creator" as "creatorId", "title", "reference", "viva", "preCall"
+    FROM "library"
+    LEFT JOIN "case_specialty" ON "library"."id" = "case_specialty"."case"
+    WHERE (
+      (("creator"=$1)=$2 OR $2 IS NULL) AND
+      ("preCall"=$3 OR $3 IS NULL) AND
+      ("viva"=$4 OR $4 IS NULL) AND
+      ("specialty"=$5 OR $5 IS NULL)
+    ) ORDER BY "created"
+  `, [
+    userId,
+    args.creator,
+    args.preCall,
+    args.viva,
+    args.specialty
+  ])
+  .then(result => result.rows);
+
+export const getSpecialties = () => pool
+  .query('SELECT "name" FROM "specialty" ORDER BY "name"')
+  .then(result => result.rows.map(row => row.name));
+
+export const getSpecialtiesForLibraryCase = (caseId: string) => pool
+  .query('SELECT "specialty" FROM "case_specialty" WHERE "case"=$1 ORDER BY "specialty"', [
+    caseId,
+  ])
+  .then(result => result.rows.map(row => row.specialty));
 
 // Mutation
 

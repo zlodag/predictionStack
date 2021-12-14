@@ -36,6 +36,7 @@ export const typeDefs = gql`
       scores: [Score!]!
       tags: [String!]!
       events (limit: Int = 10): [Event!]!
+      library (creator: Boolean, specialty: String, viva: Boolean, preCall: Boolean): [LibraryCase!]!
   }
   type Group implements NamedNode {
       id: ID!
@@ -171,10 +172,22 @@ export const typeDefs = gql`
       outcome: Outcome
       timestamp: Timestamp!
   }
+  type LibraryCase {
+      id: ID!
+      created: Timestamp!
+      creatorId: ID!
+      creator: User!
+      title: String!
+      reference: String!
+      viva: Boolean!
+      preCall: Boolean!
+      specialties: [String!]!
+  }
   type Query {
     user (id: ID!): User!
     group (id: ID!): Group!
     case (id: ID!): Case!
+    specialties: [String!]!
   }
   
   type Mutation {

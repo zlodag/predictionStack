@@ -36,13 +36,13 @@ app.use('/api', (req, res, next) => {
   }
 }, graphqlHTTP(req => ({
   schema,
-  graphiql: true,
+  graphiql: process.env.NODE_ENV === 'development' ? {headerEditorEnabled: true} : false,
   // @ts-ignore
-  context: req.user
+  context: req.user,
 })));
 app.use('/auth', auth);
 app.use((req, res) => {res.render('index');})
-
+console.log(process.env.NODE_ENV);
 app.listen(port, () => {
   console.log('The application started on http://localhost:' + port + '/');
 });
